@@ -1,7 +1,7 @@
 name: Django Test
 
 on:
-  pull_requests:
+  pull_request:
     branches: [ "main" ]
     paths:
       - 'backend/**'
@@ -39,7 +39,7 @@ jobs:
           pip install django pytest pytest-django
 
       - name: Run Tests
-        env: |
+        env:
           DJANGO_SETTINGS_MODULE: core.settings
         run: |
           python manage.py test
