@@ -1,15 +1,20 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-// import pages here
+import { createBrowserRouter } from "react-router-dom";
 
-function Router() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        // TODO : Add routes here // Example route code para home or default nga
-        page // <Route path="/" element={<Home />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
+import MainLayout from "../layout/mainLayout.tsx";
 
-export default Router;
+// TODO : Import pages here
+import Dashboard from "../pages/dashboard/dashboard.tsx";
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <MainLayout />,
+    children: [
+      {
+        path: "/",
+        element: <Dashboard />,
+      },
+      // TODO : Add here inyong mga pages
+    ],
+  },
+]);
