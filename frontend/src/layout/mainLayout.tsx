@@ -1,11 +1,16 @@
 import { Outlet } from "react-router-dom";
 import GIMI from "../assets/GIMI_Icon.svg";
-import { Calendar, CircleQuestionMark } from "lucide-react";
+import Consultation from "../components/header/consultation.tsx";
+import HelpAndResources from "../components/header/resources.tsx";
+import Account from "../components/header/account.tsx";
 
 export default function MainLayout() {
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-linear-to-b from-[#EAF3FD] to-[#95C6FD] bg-fixed">
-      <header className="flex items-center justify-between w-full px-8 py-4 bg-opaque-0 min-h-24">
+      <header
+        header
+        className="flex flex-col md:flex-row items-start md:items-center justify-between w-full px-4 md:px-8 py-4 gap-5 md:gap-0 bg-transparent min-h-24"
+      >
         <div className="flex items-center gap-4">
           <img
             src={GIMI}
@@ -22,35 +27,17 @@ export default function MainLayout() {
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-shadow">
-            <Calendar />
-            Schedule a Consultation
-          </button>
-
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-shadow">
-            <CircleQuestionMark />
-            Help & Resources
-          </button>
-
-          <div className="flex items-center gap-3 px-5 py-2 bg-white rounded-2xl shadow-sm ml-2">
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Zoie"
-                alt="Avatar"
-                className="w-full h-full"
-              />
+        <div className="flex flex-wrap items-center justify-center w-full md:w-auto md:flex-col-reverse lg:flex-row md:items-end lg:items-center gap-3 md:gap-4">
+          <div className="flex items-center justify-center gap-3 md:gap-4">
+            <div className="shrink-0">
+              <Consultation />
             </div>
-
-            <div className="flex flex-col pr-2">
-              <span className="text-xs text-gray-400 font-medium">
-                Hello there,
-              </span>
-              <span className="text-sm font-bold text-blue-800">
-                Lorem Name
-              </span>
+            <div className="shrink-0">
+              <HelpAndResources />
             </div>
+          </div>
+          <div className="hidden md:block shrink-0">
+            <Account />
           </div>
         </div>
       </header>
