@@ -1,14 +1,8 @@
-import "./App.css";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router/router";
 
 function App() {
-  return (
-    <>
-      <h1>test</h1>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
