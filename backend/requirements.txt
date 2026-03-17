@@ -9,3 +9,6 @@ psycopg==3.3.3
 psycopg-binary==3.3.3
 python-dotenv==1.2.2
 sqlparse==0.5.5
+dj-rest-auth @ git+https://github.com/iMerica/dj-rest-auth.git@master
+django-allauth==65.4.1
+djangorestframework-simplejwt==5.3.1
