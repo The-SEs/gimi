@@ -1,14 +1,25 @@
 asgiref==3.11.1
+certifi==2026.2.25
+cffi==2.0.0
+charset-normalizer==3.4.6
+cryptography==46.0.5
 dj-database-url==3.1.2
+dj-rest-auth @ git+https://github.com/iMerica/dj-rest-auth.git@d7304afc746b0c6e3c5a758208e3cd981b3988de
 Django==6.0.3
+django-allauth==65.4.1
 djangorestframework==3.16.1
+djangorestframework-simplejwt==5.3.1
 dotenv==0.9.9
+idna==3.11
 numpy==2.4.3
+oauthlib==3.3.1
 pgvector==0.4.2
 psycopg==3.3.3
 psycopg-binary==3.3.3
+pycparser==3.0
+PyJWT==2.12.1
 python-dotenv==1.2.2
+requests==2.32.5
+requests-oauthlib==2.0.0
 sqlparse==0.5.5
-dj-rest-auth @ git+https://github.com/iMerica/dj-rest-auth.git@master
-django-allauth==65.4.1
-djangorestframework-simplejwt==5.3.1
+urllib3==2.6.3
