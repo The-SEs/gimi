@@ -15,8 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+#from users.views import GoogleLogin
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/auth/', include('dj_rest_auth.urls')), # LOGIN, LOGOUT, PASSWORD RESET
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')), # SIGN UP
+
+    # TODO : IMPLEMENT
+    # path('api/auth/google/', GoogleLogin.as_view(), name='google_login'), # OAUTH FOR GOOGLE
 ]
