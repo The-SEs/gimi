@@ -10,7 +10,6 @@ export default function Dashboard() {
       <PictureWidget image={ sampleimage } title="bleh" />
       <MusicPlayer
         title="Ocean Eyes"
-        artist="Billie Eilish"
         src={song}
         cover={cover}
         />
