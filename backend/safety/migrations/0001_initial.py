@@ -14,6 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         VectorExtension(),
+
         migrations.CreateModel(
             name='HighRiskPhrase',
             fields=[
