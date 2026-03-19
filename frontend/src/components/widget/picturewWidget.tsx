@@ -6,12 +6,12 @@ type PictureProps = {
 
 export default function PictureWidget({
   image,
-  title = "Pretty Friend",
+  title,
 }: PictureProps) {
   return (
     <div>
       {/* Card */}
-      <div className="bg-gray-200 p-4 pb-10 shadow-lg w-73">
+      <div className="bg-gray-200 p-4 pb-10 shadow-lg w-73 hover:rotate-12 transition-all ease-in-out">
         
         {/* Image */}
         <div className="w-64 h-64 overflow-hidden bg-black">
