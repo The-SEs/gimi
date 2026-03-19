@@ -25,7 +25,7 @@ export default function Consulation() {
     <>
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-shadow"
+        className="flex shrink items-center gap-2 px-5 py-2.5 bg-white text-blue-700 text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-shadow"
       >
         <Calendar size={20} />
         Schedule a consultation
