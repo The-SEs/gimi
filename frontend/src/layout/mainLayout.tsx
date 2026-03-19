@@ -7,10 +7,7 @@ import Account from "../components/header/account.tsx";
 export default function MainLayout() {
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-linear-to-b from-[#EAF3FD] to-[#95C6FD] bg-fixed">
-      <header
-        header
-        className="flex flex-col md:flex-row items-start md:items-center justify-between w-full px-4 md:px-8 py-4 gap-5 md:gap-0 bg-transparent min-h-24"
-      >
+      <header className="flex flex-col md:flex-row items-start md:items-center justify-between w-full px-4 md:px-8 py-4 gap-5 md:gap-0 bg-transparent min-h-24">
         <div className="flex items-center gap-4 sm:gap-10 transition-all shrink">
           <img
             src={GIMI}
