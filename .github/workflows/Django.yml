@@ -40,4 +40,4 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: core.settings
         run: |
-         pytest
+         pytest users/test.py

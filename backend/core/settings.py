@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 
     # CUSTOM
     'users',
+    'safety'
 ]
 
 REST_FRAMEWORK = {
