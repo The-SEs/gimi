@@ -6,6 +6,7 @@ import MainLayout from "../layout/mainLayout.tsx";
 import Dashboard from "../pages/dashboard/dashboard.tsx";
 import LoginPage from "../pages/onboarding/login.tsx";
 import RegisterPage from "../pages/onboarding/register.tsx";
+import ChatTestPage from "../pages/chat/chatTest.tsx"; // ONLY FOR TESTING
 
 const RegisterWrapper = () => {
   const navigate = useNavigate();
@@ -27,6 +28,12 @@ export const router = createBrowserRouter([
   },
   {
     path: "/register",
-    element: <RegisterWrapper />, 
+    element: <RegisterWrapper />,
+  },
+  // ONLY FOR TESTING. PLEASE MOVE EVENTUALLY.
+  {
+    path: "/chat",
+    element: <ChatTestPage />,
   },
 ]);
+
