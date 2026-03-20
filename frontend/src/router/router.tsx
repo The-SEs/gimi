@@ -6,6 +6,8 @@ import MainLayout from "../layout/mainLayout.tsx";
 import Dashboard from "../pages/dashboard/dashboard.tsx";
 import LoginPage from "../pages/onboarding/login.tsx";
 import RegisterPage from "../pages/onboarding/register.tsx";
+import DisclaimersPage from "../pages/onboarding/disclaimers.tsx";
+import OnboardingQuestions from "../pages/onboarding/onboarding_questions.tsx"; 
 import ChatTestPage from "../pages/chat/chatTest.tsx"; // ONLY FOR TESTING
 
 const RegisterWrapper = () => {
@@ -27,8 +29,16 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: "/disclaimers",
+    element: <DisclaimersPage />,
+  },
+  {
     path: "/register",
     element: <RegisterWrapper />,
+  },
+  {
+    path: "/onboarding-questions",
+    element: <OnboardingQuestions />,
   },
   // ONLY FOR TESTING. PLEASE MOVE EVENTUALLY.
   {
