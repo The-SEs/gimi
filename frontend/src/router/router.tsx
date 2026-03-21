@@ -31,7 +31,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/register",
-    element: <RegisterWrapper onBackToLogin={() => navigate("/login")} />,
+    element: <RegisterWrapper />,
   },
   {
     path: "/auth/callback",

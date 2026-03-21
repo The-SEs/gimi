@@ -19,7 +19,7 @@ export const api = axios.create({
   withCredentials: true, // send httpOnly cookies on everu reqiest
 
   headers: {
-    "Content-Type": "applicaiton/json",
+    "Content-Type": "application/json",
   },
 });
 

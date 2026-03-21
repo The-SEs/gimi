@@ -3,25 +3,27 @@ import { Link, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { useAuth } from "../../hooks/useAuth";
 import type { ApiError } from "../../types/auth";
+import { useGoogleLogin } from "@react-oauth/google";
+import { authService } from "../../services/authService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, status } = useAuth();
+  const { login, status } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const isSubmitting = status === "loading";
+  const isSubmitting = status === "loading" || isGoogleLoading;
 
-  // Email / password submit
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     try {
       await login({ email, password });
-      navigate("/"); // Redirect to dashboard after login
+      navigate("/");
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
         const data = err.response.data as ApiError;
@@ -32,10 +34,34 @@ export default function LoginPage() {
     }
   }
 
-  // Google OAuth
-  function handleGoogleLogin() {
-    loginWithGoogle();
-  }
+  // Google OAuth Hook
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsGoogleLoading(true);
+      setError(null);
+      try {
+        // 1. Send the token from Google to Django backend
+        const data = await authService.loginWithGoogle(
+          tokenResponse.access_token,
+        );
+
+        // 2. dj-rest-auth returns standard JWTs and save
+        localStorage.setItem("access_token", data.access);
+        if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
+
+        // 3. Navigate to dashboard
+        navigate("/");
+      } catch (err) {
+        console.error("Django rejected the Google token:", err);
+        setError("Google authentication failed. Please try again.");
+      } finally {
+        setIsGoogleLoading(false);
+      }
+    },
+    onError: () => {
+      setError("Google login popup closed or failed.");
+    },
+  });
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
@@ -90,12 +116,12 @@ export default function LoginPage() {
         {/* Google OAuth Button */}
         <button
           type="button"
-          onClick={handleGoogleLogin}
+          onClick={() => handleGoogleLogin()}
           disabled={isSubmitting}
           className="w-full mb-6 flex items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm px-4 py-3 text-gray-700 font-medium text-sm sm:text-base hover:bg-white transition focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <GoogleIcon />
-          {isSubmitting ? "Redirecting..." : "Continue with Google"}
+          {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
         </button>
 
         <div className="flex items-center mb-6">

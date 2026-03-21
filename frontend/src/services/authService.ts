@@ -16,20 +16,33 @@ export const authService = {
    * Email + password login
    * Returns access token + user, Backend sets refresh cookie automatically
    */
-  login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return api
-      .post<AuthResponse>("/api/auth/login/", credentials)
-      .then((res) => res.data);
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const payload = {
+      email: credentials.email,
+      password: credentials.password,
+    };
+
+    const response = await api.post<AuthResponse>("/api/auth/login/", payload);
+    return response.data;
   },
 
   /**
-   * New user registration
-   * Returns access token + user, Backend sets refresh cookie automatically
+   * Email + password + confirm password
+   * Returns access token + user
    */
-  register(credentials: RegisterCredentials): Promise<AuthResponse> {
-    return api
-      .post<AuthResponse>("/api/auth/register/", credentials)
-      .then((res) => res.data);
+  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
+    const payload = {
+      username: credentials.username,
+      email: credentials.email,
+      password1: credentials.password,
+      password2: credentials.password_confirm,
+    };
+
+    const response = await api.post<AuthResponse>(
+      "/api/auth/registration/",
+      payload,
+    );
+    return response.data;
   },
 
   /**
@@ -61,7 +74,10 @@ export const authService = {
    * Django handles the full flow after the consent the browser lands once
    * "/auth/callback?access=<token>" (handled by GoogleCallbackpage).
    */
-  loginWithGoogle(): void {
-    window.location.href = `${BASE_URL}/api/auth/google/`;
+  loginWithGoogle: async (accessToken: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>("/api/users/google/", {
+      access_token: accessToken,
+    });
+    return response.data;
   },
 };
