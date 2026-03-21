@@ -75,11 +75,6 @@ REST_AUTH = {
     "JWT_AUTH_REFRESH_COOKIE": "refresh-cookie",
 }
 
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
-
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",

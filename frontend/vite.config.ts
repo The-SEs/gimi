@@ -4,9 +4,4 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // TODO: REMOVE EVENTUALLY FOR PROD
-  server: {
-    port: 3000,
-    strictPort: true,
-  },
 });
