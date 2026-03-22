@@ -11,3 +11,18 @@ class HighRiskPhrase(models.Model):
 
     def __str__(self):
         return self.text
+
+class JournalEntry(models.Model):
+    content = models.TextField()
+
+    is_flagged = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    ai_chat_response = models.TextField(blank=True, null=True)
+
+    ai_summary = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Journal from {self.created_at.strftime('%Y-%m-%d')} (Flagged: {self.is_flagged})"
+
