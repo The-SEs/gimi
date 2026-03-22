@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "safety",
     "users",
+    "wellness",
+    "consultations",
 ]
 
 REST_FRAMEWORK = {
@@ -73,6 +75,7 @@ REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_COOKIE": "auth-cookie",
     "JWT_AUTH_REFRESH_COOKIE": "refresh-cookie",
+    "USER_DETAILS_SERIALIZER": "users.serializers.UserSerializer",
 }
 
 MIDDLEWARE = [
