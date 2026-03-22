@@ -47,9 +47,11 @@ python-dotenv==1.2.2
 requests==2.32.5
 requests-oauthlib==2.0.0
 service-identity==24.2.0
+simplejwt==2.0.1
 sqlparse==0.5.5
 Twisted==25.5.0
 txaio==25.12.2
+typing==3.7.4.3
 typing_extensions==4.15.0
 ujson==5.12.0
 urllib3==2.6.3

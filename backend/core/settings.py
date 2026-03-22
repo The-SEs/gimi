@@ -14,6 +14,8 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
+from datetime import timedelta
+from corsheaders.defaults import default_headers
 
 # Load environment variables from .env file
 load_dotenv()
@@ -50,10 +52,11 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    # OAUTH
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    # allauth.socialaccount.providers.google,
+    "allauth.socialaccount.providers.google",
     # CUSTOM
     "corsheaders",
     "safety",
@@ -71,11 +74,6 @@ REST_AUTH = {
     "JWT_AUTH_COOKIE": "auth-cookie",
     "JWT_AUTH_REFRESH_COOKIE": "refresh-cookie",
 }
-
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -112,11 +110,54 @@ ASGI_APPLICATION = "core.asgi.application"
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "100.93.60.3", "100.100.111.14"]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+)
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            # Make sure this matches exactly what you named it in your .env file!
+            "secret": os.getenv("GOOGLE_SECRET_KEY"),
+            "key": "",
+        },
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        },
+    }
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+JWT_COOKIE_NAME = "gimi-refresh-token"
+JWT_COOKIE_SECURE = False  # Set to True in production (HTTPS)
+JWT_COOKIE_HTTPONLY = True  # Prevents JavaScript from reading the cookie
+JWT_COOKIE_SAMESITE = "Lax"
+
+SOCIALACCOUNT_STORE_TOKENS = True
+LOGIN_REDIRECT_URL = "/callback/"
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "X-Google-Access-Token",
+]
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -141,25 +182,7 @@ ACCOUNT_EMAIL_VERIFICATION = "none"
 
 # USE ADAPTER
 ACCOUNT_ADAPTER = "users.adapters.CustomAccountAdapter"
-
-# GOOGLE AUTHENTICATION
-# TODO : IMPLEMENT
-# SOCIALACCOUNT_PROVIDERS = {
-#    'google': {
-#        'APP': {
-#            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-#            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
-#            'key': ''
-#        },
-#        'SCOPE': [
-#            'profile',
-#            'email',
-#        ],
-#        'AUTH_PARAMS': {
-#            'access_type': 'online',
-#        }
-#    }
-# }
+SOCIALACCCOUNT_ADAPTER = "users.adapters.CustomSocialAccountAdapter"
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
