@@ -1,10 +1,17 @@
 import requests
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 # points to the Ollama running on server
+BASE_URL = os.getenv("OLLAMA_BASE_URL")
+
+llama_endpoint = f"{BASE_URL}/api/generate"
+nomic_endpoint = f"{BASE_URL}/api/embed"
 
 
 def get_embedding(text):
-    url = "http://100.100.111.14:11434/api/embed"
+    url = nomic_endpoint
     payload = {
         "model": "nomic-embed-text",
         "input": text
@@ -18,7 +25,7 @@ def get_embedding(text):
 
 def get_llama_response(student_text):
 
-    url = "http://100.100.111.14:11434/api/generate"
+    url = llama_endpoint
 
 
     prompt=f"""You are a supportive, empathetic AI companion for an iACADEMY Cebu student.
