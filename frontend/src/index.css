@@ -1,7 +1,53 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap");
+
+@layer base {
+  html {
+    box-sizing: border-box;
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
 
 @theme {
   --color-GIMI-blue: #1e40af;
+}
+
+@layer components {
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 4px;
+    background: linear-gradient(to right, #c9b8f0, #f0b8d8);
+    border-radius: 9999px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: #fff;
+    border: 2px solid #c9b8f0;
+    box-shadow: 0 1px 4px rgba(180, 140, 220, 0.3);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: #fff;
+    border: 2px solid #c9b8f0;
+    box-shadow: 0 1px 4px rgba(180, 140, 220, 0.3);
+  }
 }
 
 @keyframes gimi-alert-bounce-in {
