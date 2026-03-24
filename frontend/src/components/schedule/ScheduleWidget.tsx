@@ -1,15 +1,7 @@
 import React, { useState, useMemo } from 'react';
 
-/**
- * ScheduleWidget - A stateful, mobile-first calendar widget.
- * Features:
- * - Dynamic week generation (Saturday to Friday)
- * - Interactive date selection
- * - Responsive design (Tailwind CSS)
- * - Self-contained
- */
 const ScheduleWidget: React.FC = () => {
-  // Use current system time as source of truth
+  // Use current system time as source
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
 
@@ -53,7 +45,6 @@ const ScheduleWidget: React.FC = () => {
   const dayLabels = ['S', 'S', 'M', 'T', 'W', 'T', 'F']; // Sat, Sun, Mon, Tue, Wed, Thu, Fri
 
   return (
-    //  <div className="flex justify-center p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-0">
     <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden p-6 md:p-8">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
@@ -133,7 +124,6 @@ const ScheduleWidget: React.FC = () => {
         </div>
       </div>
     </div>
-    /* </div> */
   );
 };
 
