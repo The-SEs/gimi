@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login({ email, password });
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
         const data = err.response.data as ApiError;
@@ -50,7 +50,7 @@ export default function LoginPage() {
         if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
 
         // 3. Navigate to dashboard
-        navigate("/");
+        navigate("/dashboard");
       } catch (err) {
         console.error("Django rejected the Google token:", err);
         setError("Google authentication failed. Please try again.");
