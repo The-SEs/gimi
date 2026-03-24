@@ -8,7 +8,7 @@ import MusicPlayer from "../../components/widget/musicWidget.tsx";
 import PictureWidget from "../../components/widget/pictureWidget.tsx";
 import ScheduleWidgetDesktop from "../../components/schedule/ScheduleDesktopWidget.tsx";
 
-export default function Dashboard() {
+export default function DashboardPage() {
   return (
     <div className="mx-auto">
       <div className="grid grid-cols-2 gap-x-10 mx-auto lg:flex">
