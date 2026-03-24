@@ -10,11 +10,10 @@ export default function DoodleWidget({
   className = "",
   title = "Doodle",
   subtitle = "Sketch your ideas",
-}: DoodleWidgetProps)
-  {
+}: DoodleWidgetProps) {
   return (
     <div
-      className={`flex items-center gap-4 rounded-2xl bg-[#e9edf5] px-6 py-5 shadow-sm cursor-pointer ${className}`}
+      className={`flex items-center w-[95%] md:w-[30%] gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm cursor-pointer ${className}`}
     >
       <img
         src={doodleIcon}
