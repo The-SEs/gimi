@@ -144,3 +144,7 @@
 .gimi-jelly-scrollbar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #ffbad2 0%, #ee91b5 52%, #e37aa4 100%);
 }
+
+@theme {
+  --font-liberation: "Liberation Serif", "Times New Roman", serif;
+}
