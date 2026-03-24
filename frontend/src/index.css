@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Gloria+Hallelujah&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
 
 @layer base {
   html {
@@ -147,4 +148,8 @@
 
 @theme {
   --font-liberation: "Liberation Serif", "Times New Roman", serif;
+}
+
+@theme {
+  --font-varela: "Varela Round", sans-serif;
 }
