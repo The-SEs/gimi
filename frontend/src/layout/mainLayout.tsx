@@ -44,8 +44,10 @@ export default function MainLayout() {
       </header>
 
       <main className="flex-grow max-w-screen mx-auto w-full p-6 sm:p-8">
-        <WelcomeWidget />
-        <MoodBoard />
+        <div className=" lg:flex">
+          <WelcomeWidget />
+          <MoodBoard />
+        </div>
         <JournalWidget />
         <Outlet />
       </main>

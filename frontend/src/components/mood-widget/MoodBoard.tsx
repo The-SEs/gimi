@@ -23,9 +23,9 @@ export default function MoodBoard () {
     };
 
     return (
-        <div className="relative">
-            <div></div>
-                <div className="bg-white py-5 px-7 rounded-3xl w-fit flex flex-col gap-4">
+        <div className="relative w-[90%] mx-auto items-center mt-5 lg:w-[40%] xl:w-[30%]">
+            <div className="absolute -top-3 left-3/4 -translate-x-1/4 w-20 h-6 bg-blue-300/40 backdrop-blur-[1px] border-l border-r border-white/20 -rotate-2 shadow-sm z-10"></div>
+                <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4">
 
                     <h2 className="text-2xl text-[#1E40AF] font-bold font-liberation">Mood of the Day</h2>
 
@@ -35,7 +35,7 @@ export default function MoodBoard () {
                         <p className="text-sm text-[#C7CAD1]">Saved at {time}</p>
                     </div>
 
-                    <div className="flex gap-5 px-5 pb-3">
+                    <div className="flex gap-5 px-5 pb-3 justify-center md:gap-10">
                         <button className="transition-transform duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
                             onClick={() => handleMoodSelection("Calm", calmMood)}>
                             <img src={calmMood} alt="Calm Mood" />
