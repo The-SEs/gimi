@@ -1,17 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 
 const ScheduleDesktopWidget: React.FC = () => {
   // --- Date State ---
   const today = useMemo(() => new Date(), []);
 
   // viewDate controls which month we are looking at
-  const [viewDate, setViewDate] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [viewDate, setViewDate] = useState<Date>(
+    new Date(today.getFullYear(), today.getMonth(), 1),
+  );
 
   // selectedDate is for the highlight
   const [selectedDate, setSelectedDate] = useState<Date>(today);
 
   // --- Sticky Note State ---
-  const [notes, setNotes] = useState<string[]>(["Don't forget to drink water and take a walk! You're doing great, Abigail! 🌷"]);
+  const [notes, setNotes] = useState<string[]>([
+    "Don't forget to drink water and take a walk! You're doing great, Abigail! 🌷",
+  ]);
 
   // --- Helper Functions (Requested) ---
   const isToday = (date: Date) => isSameDate(date, today);
@@ -76,31 +80,36 @@ const ScheduleDesktopWidget: React.FC = () => {
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
   };
 
-
   const getOrdinalSuffix = (day: number) => {
-    if (day > 3 && day < 21) return 'th';
+    if (day > 3 && day < 21) return "th";
     switch (day % 10) {
-      case 1: return 'st';
-      case 2: return 'nd';
-      case 3: return 'rd';
-      default: return 'th';
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
     }
   };
 
   // --- Formatting ---
-  const monthName = viewDate.toLocaleString('default', { month: 'long' });
+  const monthName = viewDate.toLocaleString("default", { month: "long" });
   const viewYear = viewDate.getFullYear();
 
-  const selectedFullDate = `${selectedDate.toLocaleDateString('default', { weekday: 'long' })}, ${selectedDate.toLocaleDateString('default', { month: 'short' })} ${selectedDate.getDate()}${getOrdinalSuffix(selectedDate.getDate())}`;
+  const selectedFullDate = `${selectedDate.toLocaleDateString("default", { weekday: "long" })}, ${selectedDate.toLocaleDateString("default", { month: "short" })} ${selectedDate.getDate()}${getOrdinalSuffix(selectedDate.getDate())}`;
 
-  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto bg-[#f0f7ff] p-6 md:p-12 rounded-[40px] shadow-2xl font-sans min-h-[700px]">
-
+    <div className="relative w-full max-w-[75%] mx-auto bg-[#f0f7ff] p-6 md:p-12 rounded-[40px] shadow-2xl font-sans min-h-[700px]">
       {/* 1. Header Row */}
       <div className="flex justify-between items-center mb-12">
-        <h2 className="text-[#2d5a9e] text-4xl font-bold tracking-tight" style={{ fontFamily: '"Gloria Hallelujah", cursive' }}>
+        <h2
+          className="text-[#2d5a9e] text-4xl font-bold tracking-tight"
+          style={{ fontFamily: '"Gloria Hallelujah", cursive' }}
+        >
           Our Schedule
         </h2>
         <span className="text-[#4b8df2] text-xl font-medium">
@@ -109,23 +118,56 @@ const ScheduleDesktopWidget: React.FC = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
-
         {/* 2. Left Panel: Calendar */}
         <div className="flex-1">
           {/* Calendar Header */}
           <div className="flex justify-between items-center mb-8 px-2">
-            <h3 className="text-[#2d5a9e] text-xl font-bold" style={{ fontFamily: '"Liberation Serif", Tinos, "Times New Roman", serif' }}>
+            <h3
+              className="text-[#2d5a9e] text-xl font-bold"
+              style={{
+                fontFamily:
+                  '"Liberation Serif", Tinos, "Times New Roman", serif',
+              }}
+            >
               {monthName} {viewYear}
             </h3>
             <div className="flex space-x-4">
-              <button onClick={handlePrevMonth} className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              <button
+                onClick={handlePrevMonth}
+                className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
-              <button onClick={handleNextMonth} className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              <button
+                onClick={handleNextMonth}
+                className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -134,7 +176,10 @@ const ScheduleDesktopWidget: React.FC = () => {
           {/* Days Label Header */}
           <div className="grid grid-cols-7 mb-4">
             {dayLabels.map((l, i) => (
-              <div key={i} className="text-center text-[#9db7e0] font-bold text-sm">
+              <div
+                key={i}
+                className="text-center text-[#9db7e0] font-bold text-sm"
+              >
                 {l}
               </div>
             ))}
@@ -151,20 +196,24 @@ const ScheduleDesktopWidget: React.FC = () => {
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
                   className={`relative h-14 md:h-16 flex items-center justify-center transition-all duration-200
-                    ${isCurrentMonth ? 'text-[#2d5a9e]' : 'text-[#c0d4ed]'}
-                    ${isSelectedVal ? 'z-10' : 'hover:scale-105'}
+                    ${isCurrentMonth ? "text-[#2d5a9e]" : "text-[#c0d4ed]"}
+                    ${isSelectedVal ? "z-10" : "hover:scale-105"}
                   `}
                 >
                   {/* Selected Highlight (Blue Square with dot) */}
                   {isSelectedVal && (
                     <div className="absolute inset-0 bg-[#4b8df2] rounded-2xl shadow-lg ring-4 ring-white/10 flex flex-col items-center justify-center">
-                      <span className="text-white text-lg font-bold">{date.getDate()}</span>
+                      <span className="text-white text-lg font-bold">
+                        {date.getDate()}
+                      </span>
                       <div className="w-1.5 h-1.5 bg-white rounded-full mt-1"></div>
                     </div>
                   )}
 
                   {!isSelectedVal && (
-                    <span className={`text-lg font-semibold ${isTodayVal ? 'text-[#4b8df2]' : ''}`}>
+                    <span
+                      className={`text-lg font-semibold ${isTodayVal ? "text-[#4b8df2]" : ""}`}
+                    >
                       {date.getDate()}
                     </span>
                   )}
@@ -176,7 +225,14 @@ const ScheduleDesktopWidget: React.FC = () => {
 
         {/* 3. Right Panel: Today's Notes */}
         <div className="w-full lg:w-[420px]">
-          <h3 className="text-[#2d5a9e] text-3xl font-bold mb-4" style={{ fontFamily: '"Liberation Serif", Tinos, "Times New Roman", serif' }}>Today's Notes</h3>
+          <h3
+            className="text-[#2d5a9e] text-3xl font-bold mb-4"
+            style={{
+              fontFamily: '"Liberation Serif", Tinos, "Times New Roman", serif',
+            }}
+          >
+            Today's Notes
+          </h3>
           <div className="w-full h-[1px] bg-blue-100 mb-8" />
 
           <div className="space-y-8">
@@ -204,7 +260,9 @@ const ScheduleDesktopWidget: React.FC = () => {
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-[#d0e6ff] opacity-80 z-20 shadow-sm rounded-sm" />
 
             <div className="w-full border-2 border-dashed border-[#c0d4ed] rounded-[32px] p-8 md:p-10 relative bg-white/40 group">
-              <p className="text-[#9db7e0] font-bold text-xl mb-4">Sticky Note:</p>
+              <p className="text-[#9db7e0] font-bold text-xl mb-4">
+                Sticky Note:
+              </p>
 
               <textarea
                 className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-hidden h-24 placeholder:text-[#c0d4ed]"
@@ -228,8 +286,19 @@ const ScheduleDesktopWidget: React.FC = () => {
             className="w-20 h-20 bg-[#4b8df2] text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
             aria-label="Add Another Sticky Note"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 transition-transform duration-300 group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12 transition-transform duration-300 group-hover:rotate-90"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={3}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
           </button>
         </div>
@@ -240,18 +309,28 @@ const ScheduleDesktopWidget: React.FC = () => {
 
 // --- Helper Components ---
 
-const EventCard: React.FC<{ time: string; title: string; description: string; type: 'pin' | 'tape' }> = ({ time, title, description, type }) => {
+const EventCard: React.FC<{
+  time: string;
+  title: string;
+  description: string;
+  type: "pin" | "tape";
+}> = ({ time, title, description, type }) => {
   return (
-    <div className={`relative bg-white rounded-3xl p-6 shadow-sm border border-blue-50/50 hover:shadow-md transition-all duration-300 transform ${type === 'pin' ? 'rotate-[-1deg]' : 'rotate-[1deg]'}`}>
-
+    <div
+      className={`relative bg-white rounded-3xl p-6 shadow-sm border border-blue-50/50 hover:shadow-md transition-all duration-300 transform ${type === "pin" ? "rotate-[-1deg]" : "rotate-[1deg]"}`}
+    >
       {/* Decoration */}
-      {type === 'tape' && (
+      {type === "tape" && (
         <div className="absolute -top-4 -right-2 w-16 h-8 bg-[#d0e6ff] opacity-70 rotate-[20deg] shadow-sm rounded-sm" />
       )}
 
-      <p className="text-[#4b8df2] text-xs font-bold uppercase tracking-wider mb-2">{time}</p>
+      <p className="text-[#4b8df2] text-xs font-bold uppercase tracking-wider mb-2">
+        {time}
+      </p>
       <h4 className="text-[#2d5a9e] text-lg font-extrabold mb-1">{title}</h4>
-      <p className="text-[#9db7e0] text-sm font-medium leading-snug">{description}</p>
+      <p className="text-[#9db7e0] text-sm font-medium leading-snug">
+        {description}
+      </p>
     </div>
   );
 };

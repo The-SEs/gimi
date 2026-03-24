@@ -7,11 +7,11 @@ export default function JournalWidget() {
                 <img src={journalIcon} alt="" />
             </div>
 
-            <div>
-                <p className="text-2xl text-[#1E40AF] font-semibold">Journal</p>
-                <p className="text-sm text-[#6B7280]">Record your day</p>
-            </div>
-
-        </div>
-    );
+      <div>
+        <p className="text-2xl text-[#1E40AF] font-semibold">Journal</p>
+        <p className="text-sm text-[#6B7280]">Record your day</p>
+      </div>
+    </div>
+  );
 }
+
