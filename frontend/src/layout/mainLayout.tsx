@@ -5,6 +5,8 @@ import HelpAndResources from "../components/header/resources.tsx";
 import Account from "../components/header/account.tsx";
 import WelcomeWidget from "../components/welcome-widget/WelcomeWidget.tsx";
 import MoodBoard from "../components/mood-widget/MoodBoard.tsx";
+import JournalWidget from "../components/journal-widget/JournalWidget.tsx";
+
 
 export default function MainLayout() {
   return (
@@ -44,6 +46,7 @@ export default function MainLayout() {
       <main className="flex-grow max-w-screen mx-auto w-full p-6 sm:p-8">
         <WelcomeWidget />
         <MoodBoard />
+        <JournalWidget />
         <Outlet />
       </main>
 
