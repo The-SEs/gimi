@@ -2,7 +2,7 @@ import journalIcon from "../../assets/journal-icon.svg";
 
 export default function JournalWidget() {
     return (
-        <div className="bg-white w-[95%] rounded-xl flex gap-5 px-5 py-3 items-center mt-5 md:w-[30%]">
+        <div className="bg-white w-[95%] mx-auto rounded-xl flex gap-5 px-5 py-3 items-center mt-10 lg:w-[30%] lg:mx-5 lg:mt-0">
             <div>
                 <img src={journalIcon} alt="" />
             </div>
