@@ -3,6 +3,7 @@ import GIMI from "../assets/GIMI_Icon.svg";
 import Consultation from "../components/header/consultation.tsx";
 import HelpAndResources from "../components/header/resources.tsx";
 import Account from "../components/header/account.tsx";
+import MoodBoard from "../components/mood-widget/MoodBoard.tsx";
 
 export default function MainLayout() {
   return (
@@ -40,6 +41,7 @@ export default function MainLayout() {
       </header>
 
       <main className="flex-grow max-w-screen mx-auto w-full p-6 sm:p-8">
+        <MoodBoard />
         <Outlet />
       </main>
 
