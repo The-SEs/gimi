@@ -13,8 +13,8 @@ class JournalEntrySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JournalEntry
-        fields = ["id", "title", "content", "mood", "created_at", "updated_at"]
-        read_only_fields = ["id", "mood", "created_at", "updated_at"]
+        fields = ["id", "title", "content", "mood", "created_at", "updated_at", "is_flagged", "ai_chat_response"]
+        read_only_fields = ["id", "mood", "created_at", "updated_at", "is_flagged", "ai_chat_response"]
 
 
 class DailyMoodSerializer(serializers.ModelSerializer):

@@ -12,6 +12,9 @@ from .serializers import (
 )
 from .services import analyze_mood
 
+from safety.services import check_journal
+from safety.ai_utils import get_llama_response
+
 
 def _save_mood(entry):
     result, raw = analyze_mood(entry.content)
@@ -39,9 +42,47 @@ class JournalListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        entry = serializer.save(user=request.user)
-        _save_mood(entry)
-        return Response(JournalEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+        # Grab raw text
+        content = serializer.validated_data.get('content', '')
+
+        if not content:
+            raise ValidationError({"content": "Journal cannot be empty"})
+
+        # Run interceptor
+        is_dangerous, matched_phrase, distance = check_journal(content)
+
+        if is_dangerous:
+            entry = serializer.save(
+                user=request.user,
+                is_flagged=True
+            )
+
+            _save_mood(entry)
+
+            return Response({
+                'status': 'high_risk',
+                'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
+                'journal_id': entry.id
+            }, status=status.HTTP_201_CREATED)
+
+        else:
+            ai_reply = get_llama_response(content)
+
+            entry = serializer.save(
+                user=request.user,
+                is_flagged=False,
+                ai_chat_response=ai_reply
+            )
+            _save_mood(entry)
+
+            return Response({
+                'status': 'success',
+                'message': 'Journal saved successfully',
+                'ai_response': ai_reply,
+                'journal_id': entry.id
+            }, status=status.HTTP_201_CREATED)
+
+
 
 
 class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):

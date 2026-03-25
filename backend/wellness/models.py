@@ -16,6 +16,8 @@ class DailyMood(models.Model):
     date = models.DateField(auto_now_add=True)
     state = models.CharField(max_length=2, choices=MoodState.choices)
 
+
+
     class Meta:
         unique_together = ["user", "date"]
 
@@ -32,6 +34,9 @@ class JournalEntry(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    is_flagged = models.BooleanField(default=False)
+    ai_chat_response = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at"]
