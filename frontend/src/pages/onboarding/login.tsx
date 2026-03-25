@@ -4,11 +4,10 @@ import { isAxiosError } from "axios";
 import { useAuth } from "../../hooks/useAuth";
 import type { ApiError } from "../../types/auth";
 import { useGoogleLogin } from "@react-oauth/google";
-import { authService } from "../../services/authService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, status } = useAuth();
+  const { login, loginWithGoogle, status } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      await login({ email, password });
+      await login({ username: email, password });
       navigate("/dashboard");
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
@@ -40,16 +39,10 @@ export default function LoginPage() {
       setIsGoogleLoading(true);
       setError(null);
       try {
-        // 1. Send the token from Google to Django backend
-        const data = await authService.loginWithGoogle(
-          tokenResponse.access_token,
-        );
-
-        // 2. dj-rest-auth returns standard JWTs and save
-        localStorage.setItem("access_token", data.access);
-        if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
-
-        // 3. Navigate to dashboard
+        // 1. Send the token from Google to Django backend via AuthContext
+        await loginWithGoogle(tokenResponse.access_token);
+        
+        // 2. Navigate to dashboard
         navigate("/dashboard");
       } catch (err) {
         console.error("Django rejected the Google token:", err);
@@ -136,9 +129,9 @@ export default function LoginPage() {
           <div>
             <input
               id="email"
-              type="email"
+              type="text"
               autoComplete="email"
-              placeholder="Email"
+              placeholder="Email or Nickname"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

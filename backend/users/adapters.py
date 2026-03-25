@@ -18,17 +18,22 @@ class CustomAccountAdapter(DefaultAccountAdapter):
     def populate_username(self, request, user):
         """
         Overrides the default username population to use the email prefix
-        and ensure uniqueness
+        only if no username was provided.
         """
         from django.contrib.auth import get_user_model
 
         User = get_user_model()
 
-        email = user.email
-        base_username = email.split("@")[0]
-        username = base_username
+        # If a username is already set (e.g. from the registration form), keep it!
+        # Otherwise, use the email prefix.
+        if user.username:
+            base_username = user.username
+        else:
+            base_username = user.email.split("@")[0]
 
+        username = base_username
         counter = 1
+        # Ensure uniqueness
         while User.objects.filter(username=username).exists():
             username = f"{base_username}{counter}"
             counter += 1

@@ -20,6 +20,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-x-10 mx-auto lg:flex">
         <WelcomeWidget className="col-span-2" name={user?.username || "Student"} />
         <MoodBoard />
+        
       </div>
       <div className="flex">
         <div className="mx-6 grid grid-cols-3 gap-x-10 flex-1 lg:flex mb-10">
