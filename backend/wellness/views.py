@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.db.models import Count
 from django.db import IntegrityError
 
@@ -105,8 +106,6 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
             serializer.save(user=self.request.user)
         except IntegrityError:
             raise ValidationError({"detail": "You have already logged your mood for the day."})
-        serializer.save(user=self.request.user)
-
 
 # vector drawing
 

@@ -222,3 +222,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+# url to spyke's machine para ai and dapat tailscalers
+LLM_BASE_URL = "http:100.100.111.14/v1/chat/completions"
