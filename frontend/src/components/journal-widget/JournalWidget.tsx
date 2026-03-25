@@ -6,7 +6,7 @@ type JournalWidgetProps = {
 
 export default function JournalWidget({ className = "" }: JournalWidgetProps) {
   return (
-    <div className="bg-white w-[95%] mx-auto rounded-xl flex gap-5 px-5 py-3 items-center mt-10 lg:w-[30%] lg:mx-5 lg:mt-0">
+    <div className="bg-white w-full rounded-xl flex gap-5 px-5 py-3 items-center shadow-sm ${className}">
       <div>
         <img src={journalIcon} alt="" />
       </div>

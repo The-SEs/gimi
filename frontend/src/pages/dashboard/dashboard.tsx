@@ -8,6 +8,7 @@ import PictureWidget from "../../components/widget/pictureWidget.tsx";
 import ScheduleWidgetDesktop from "../../components/schedule/ScheduleDesktopWidget.tsx";
 import GimiHeadIcon from "../../components/gimi-action-button/gimi-button.tsx";
 import { useAuth } from "../../hooks/useAuth.ts";
+import { Link } from "react-router-dom";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -17,15 +18,14 @@ export default function DashboardPage() {
         <GimiHeadIcon />
       </div>
       <div className="grid grid-cols-2 gap-x-10 mx-auto lg:flex">
-        <WelcomeWidget
-          className="col-span-2"
-          name={user?.username || "Student"}
-        />
+        <WelcomeWidget className="col-span-2" name={user?.username || "Student"} />
         <MoodBoard />
       </div>
       <div className="flex">
         <div className="mx-6 grid grid-cols-3 gap-x-10 flex-1 lg:flex mb-10">
-          <JournalWidget className="flex-1" />
+          <Link to="/journal" className="flex-1 block">
+            <JournalWidget className="h-full" />
+          </Link>
           <DoodleWidget className="flex-1" />
           <TalkToGimi className="flex-1" />
         </div>
