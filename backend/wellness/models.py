@@ -14,6 +14,7 @@ class DailyMood(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="moods"
     )
     date = models.DateField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     state = models.CharField(max_length=2, choices=MoodState.choices)
 
 
@@ -22,7 +23,7 @@ class DailyMood(models.Model):
         unique_together = ["user", "date"]
 
     def __str__(self):
-        return f"{self.user.email} - {self.get_state_display()} on {self.date}"
+        return f"{self.user.email} - {self.get_state_display()} updated at {self.updated_at}"
 
 
 class JournalEntry(models.Model):

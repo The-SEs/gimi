@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.db.models import Count
 from django.db import IntegrityError
+from django.utils import timezone
 
 from .models import JournalEntry, UserMood, DailyMood, VectorDrawing
 from .serializers import (
@@ -143,11 +144,11 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
         return DailyMood.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        try:
-            serializer.save(user=self.request.user)
-        except IntegrityError:
-            raise ValidationError({"detail": "You have already logged your mood for the day."})
-
+       DailyMood.objects.update_or_create(
+           user=self.request.user,
+           date=timezone.now().date(),
+           defaults={'state': serializer.validated_data['state']}
+       )
 # vector drawing
 
 class VectorDrawingListCreateView(generics.ListCreateAPIView):
