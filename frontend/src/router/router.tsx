@@ -9,6 +9,7 @@ import RegisterPage from "../pages/onboarding/register.tsx";
 import DisclaimersPage from "../pages/onboarding/disclaimers.tsx";
 import OnboardingQuestions from "../pages/onboarding/onboarding_questions.tsx";
 import ChatTestPage from "../pages/chat/chatTest.tsx"; // ONLY FOR TESTING
+import JournalPage from "../pages/journal/journal.tsx";
 
 const RegisterWrapper = () => {
   const navigate = useNavigate();
@@ -24,6 +25,12 @@ export const router = createBrowserRouter([
     path: "/dashboard",
     element: <MainLayout />,
     children: [{ path: "/dashboard", element: <DashboardPage /> }],
+    
+  },
+  {
+    path: "/journal",
+    element: <MainLayout />,
+    children: [{ path: "/journal", element: <JournalPage /> }],
   },
   {
     path: "/register",
