@@ -9,7 +9,7 @@ import type {
   TokenRefreshResponse,
 } from "../types/auth";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+// const BASE_URL = ... (removed)
 
 export const authService = {
   /**
@@ -18,7 +18,7 @@ export const authService = {
    */
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const payload = {
-      email: credentials.email,
+      username: credentials.username,
       password: credentials.password,
     };
 

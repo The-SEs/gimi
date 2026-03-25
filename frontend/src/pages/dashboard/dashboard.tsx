@@ -22,6 +22,7 @@ export default function DashboardPage() {
           name={user?.username || "Student"}
         />
         <MoodBoard />
+        
       </div>
       <div className="flex">
         <div className="mx-6 grid grid-cols-3 gap-x-10 flex-1 lg:flex mb-10">

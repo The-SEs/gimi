@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch the user profile now that we have a valid access token
         try {
           const { api } = await import("../services/api");
-          const { data: user } = await api.get("/api/auth/me/");
+          const { data: user } = await api.get("/api/auth/user/");
           setState({
             user,
             accessToken: result.access,
@@ -83,8 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authService.login(credentials);
       setAccessToken(data.access);
+
+      const {api} = await import("../services/api");
+      const { data: user } = await api.get("/api/auth/user/");
+
       setState({
-        user: data.user,
+        user,
         accessToken: data.access,
         status: "authenticated",
       });
@@ -99,8 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authService.register(credentials);
       setAccessToken(data.access);
+      const {api} = await import("../services/api");
+      const { data: user } = await api.get("/api/auth/user/");
+
       setState({
-        user: data.user,
+        user,
         accessToken: data.access,
         status: "authenticated",
       });
@@ -120,8 +127,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const loginWithGoogle = useCallback(() => {
-    authService.loginWithGoogle();
+  const loginWithGoogle = useCallback(async (token: string) => {
+    setState((s) => ({ ...s, status: "loading" }));
+    try {
+      const data = await authService.loginWithGoogle(token);
+      setAccessToken(data.access);
+
+      const {api} = await import("../services/api");
+      const { data: user } = await api.get("/api/auth/user/");
+
+      setState({
+        user,
+        accessToken: data.access,
+        status: "authenticated",
+      });
+    } catch (err) {
+      setState((s) => ({ ...s, status: "unauthenticated" }));
+      throw err;
+    }
   }, []);
 
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {

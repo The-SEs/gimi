@@ -17,7 +17,7 @@ export interface User {
 // API Request payloads
 
 export interface LoginCredentials {
-  email: string;
+  username: string; // This can be email or nickname
   password: string;
 }
 
@@ -76,7 +76,7 @@ export interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: () => void;
+  loginWithGoogle: (googleAccessToken: string) => Promise<void>;
 
   // Manually refresh access token. Used by axios interceptor
   refreshAccessToken: () => Promise<string | null>;

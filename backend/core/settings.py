@@ -176,16 +176,15 @@ DATABASES = {
 # CONFIG TO MAKE dj-rest-auth AND django-allauth WORK TOGETHER
 AUTH_USER_MODEL = "users.CustomUser"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
 # USE ADAPTER
 ACCOUNT_ADAPTER = "users.adapters.CustomAccountAdapter"
-SOCIALACCCOUNT_ADAPTER = "users.adapters.CustomSocialAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "users.adapters.CustomSocialAccountAdapter"
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
