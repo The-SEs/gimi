@@ -1,4 +1,8 @@
-export default function Account() {
+type AccountProps = {
+  name?: string
+}
+
+export default function Account({ name = "Student" }: AccountProps) {
   return (
     <div className="absolute right-6 top-6 sm:static sm:ml-2 flex items-center sm:gap-3 sm:bg-white sm:px-5 sm:py-2 sm:rounded-2xl sm:shadow-sm">
       {/* Avatar - Always visible, added a white border for mobile to make it pop */}
@@ -13,8 +17,8 @@ export default function Account() {
       {/* Text block - Hidden on mobile, visible on small screens and up */}
       <div className="hidden sm:flex flex-col pr-2">
         <span className="text-xs text-gray-400 font-medium">Hello there,</span>
-        <span className="text-sm font-bold text-blue-800">Lorem Name</span>
+        <span className="text-sm font-bold text-blue-800">{name}</span>
       </div>
     </div>
-  );
+  )
 }
