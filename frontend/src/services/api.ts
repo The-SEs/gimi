@@ -38,6 +38,20 @@ export function getAccessToken(): string | ull {
   return _accessToken;
 }
 
+api.interceptors.request.use(
+  (config) => {
+    // Grab token from memory, or fallback to localStorage (for Google SSO)
+    const token = getAccessToken() || localStorage.getItem("access_token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 // Response interceptor
 
 let _isRefreshing = false;
@@ -107,3 +121,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+_isRefreshing = false;

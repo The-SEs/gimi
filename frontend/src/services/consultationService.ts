@@ -14,7 +14,7 @@ export const consultationService = {
     return response.data;
   },
 
-  createConsultations: async (data: Consultation): Promise<Consultation> => {
+  createConsultation: async (data: Consultation): Promise<Consultation> => {
     const response = await api.post<Consultation>("/api/consultations/", data);
     return response.data;
   },
