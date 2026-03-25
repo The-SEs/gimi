@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { canvasService } from '../../services/canvasService';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types 
 interface StrokeObj {
   id: number; type: 'stroke';
   color: string; opacity: number; lineWidth: number;
@@ -34,7 +35,7 @@ interface PlacingText {
   text: string; font: string; fontSize: number; bold: boolean; italic: boolean;
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+//  Icons 
 const PenIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -82,8 +83,15 @@ const SelectIcon = () => (
     <path d="M4 2l16 10-7 1.5-4 7z"/>
   </svg>
 );
+const SaveIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+  </svg>
+);
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+//  Constants 
 const PALETTE = [
   '#1a1a2e','#6b5b95','#e8a0bf','#f7c5d5','#fddde6',
   '#c9b8f0','#a8d8ea','#87ceeb','#b5ead7','#ffd700',
@@ -97,7 +105,7 @@ const thumbCSS = `
   .swatch:hover{transform:scale(1.25);}
 `;
 
-// ─── Pure helpers ─────────────────────────────────────────────────────────────
+//  Pure helpers 
 const hexToRgb = (hex: string) => ({
   r: parseInt(hex.slice(1,3),16),
   g: parseInt(hex.slice(3,5),16),
@@ -122,7 +130,7 @@ function rectsOverlap(ax:number,ay:number,aw:number,ah:number,bx:number,by:numbe
   return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// Sub-components 
 const ToolBtn = ({
   active=false, disabled=false, onClick, title, children, className='',
 }: {
@@ -162,7 +170,7 @@ const StyleBtn = ({
   </button>
 );
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+//  Main Component 
 export default function SketchbookCanvas() {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,7 +192,14 @@ export default function SketchbookCanvas() {
   const [objects,     setObjects]     = useState<CanvasObj[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  // ── Refs that don't need to trigger re-renders ─────────────────────────────
+  // Save state 
+  const [drawingId,    setDrawingId]    = useState<number | null>(null);
+  const [drawingTitle, setDrawingTitle] = useState<string>('');
+  const [isSaving,     setIsSaving]     = useState<boolean>(false);
+  const [saveError,    setSaveError]    = useState<string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
+
+  // Refs that don't need to trigger re-renders 
   const selectState   = useRef<SelectState>({ mode:'idle', lassoStart:null, lassoRect:null, dragStart:null, origPositions:null });
   const historyRef    = useRef<string[]>([]);
   const redoStackRef  = useRef<string[]>([]);
@@ -194,7 +209,7 @@ export default function SketchbookCanvas() {
 
   const today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
-  // ─── Resize ────────────────────────────────────────────────────────────────
+  // Resize 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
     const update = () => {
@@ -211,7 +226,7 @@ export default function SketchbookCanvas() {
 
   useEffect(() => { renderAll(); }, [objects, selectedIds, canvasSize]);
 
-  // ─── Render all objects to canvas ─────────────────────────────────────────
+  // Render all objects to canvas 
   const renderAll = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -285,7 +300,43 @@ export default function SketchbookCanvas() {
     }
   }, [objects, selectedIds, tool]);
 
-  // ─── Bounding boxes ───────────────────────────────────────────────────────
+  //  Save drawing to backend 
+  const serializeCanvasData = useCallback(() => {
+    // Strip non-serializable HTMLImageElement
+    return objects.map(o =>
+      o.type === 'image' ? { ...o, img: undefined } : o
+    );
+  }, [objects]);
+
+  const handleSaveDrawing = async (title: string) => {
+    if (!title.trim()) {
+      setSaveError('Title cannot be empty');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+
+      const canvasData = serializeCanvasData();
+      const result = await canvasService.saveDrawing(title, canvasData, drawingId || undefined);
+
+      // Update the drawing ID if this was a new drawing
+      if (!drawingId) {
+        setDrawingId(result.id);
+        setDrawingTitle(title);
+      }
+
+      setShowSaveModal(false);
+      // Optional: show a success toast/notification here
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save drawing';
+      setSaveError(message);
+      console.error('Failed to save drawing:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };────
   function getObjBounds(obj: CanvasObj): Bounds | null {
     const dx=obj.dx, dy=obj.dy;
     if (obj.type==='stroke') {
@@ -308,7 +359,7 @@ export default function SketchbookCanvas() {
     return null;
   }
 
-  // ─── History ──────────────────────────────────────────────────────────────
+  // History 
   const saveSnapshot = useCallback((objs: CanvasObj[]) => {
     // Strip non-serialisable HTMLImageElement before JSON
     const serialisable = objs.map(o =>
@@ -361,7 +412,7 @@ export default function SketchbookCanvas() {
     setCanRedo(false);
   };
 
-  // ─── Canvas coordinate helper ─────────────────────────────────────────────
+  //  Canvas coordinate helper 
   const getPos = (e: React.MouseEvent | React.TouchEvent): Pos => {
     const canvas = canvasRef.current!;
     const rect   = canvas.getBoundingClientRect();
@@ -374,7 +425,7 @@ export default function SketchbookCanvas() {
     };
   };
 
-  // ─── Hit test ─────────────────────────────────────────────────────────────
+  // Hit test 
   function hitTest(x: number, y: number): number | null {
     for (let i = objects.length-1; i >= 0; i--) {
       const b = getObjBounds(objects[i]);
@@ -383,7 +434,7 @@ export default function SketchbookCanvas() {
     return null;
   }
 
-  // ─── Pointer down ─────────────────────────────────────────────────────────
+  // Pointer down 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const pos = getPos(e);
     const ss  = selectState.current;
@@ -435,7 +486,7 @@ export default function SketchbookCanvas() {
     setObjects(prev => [...prev, stroke]);
   };
 
-  // ─── Pointer move ─────────────────────────────────────────────────────────
+  // Pointer move 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     const pos = getPos(e);
     const ss  = selectState.current;
@@ -480,7 +531,7 @@ export default function SketchbookCanvas() {
     setObjects(prev => prev.map(o => o.id === updated.id ? updated : o));
   };
 
-  // ─── Pointer up ───────────────────────────────────────────────────────────
+  // Pointer up 
   const handleMouseUp = (e?: React.MouseEvent | React.TouchEvent) => {
     const ss = selectState.current;
 
@@ -512,7 +563,7 @@ export default function SketchbookCanvas() {
     setObjects(prev => { saveSnapshot(prev); return prev; });
   };
 
-  // ─── Eraser ───────────────────────────────────────────────────────────────
+  // Eraser 
   function eraseAt(x: number, y: number) {
     setObjects(prev => prev.filter(obj => {
       const b = getObjBounds(obj);
@@ -520,7 +571,7 @@ export default function SketchbookCanvas() {
     }));
   }
 
-  // ─── Delete key ───────────────────────────────────────────────────────────
+  // Delete key 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.key==='Delete' || e.key==='Backspace') &&
@@ -539,7 +590,7 @@ export default function SketchbookCanvas() {
     return () => window.removeEventListener('keydown', onKey);
   }, [tool, selectedIds, saveSnapshot]);
 
-  // ─── Text placement ───────────────────────────────────────────────────────
+  // Text placement 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (tool === 'text' && placingText.current) {
       const pos = getPos(e);
@@ -557,7 +608,7 @@ export default function SketchbookCanvas() {
     }
   };
 
-  // ─── Image import ─────────────────────────────────────────────────────────
+  // Image import 
   const handleImageImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -581,7 +632,7 @@ export default function SketchbookCanvas() {
     e.target.value = '';
   };
 
-  // ─── Cursor ───────────────────────────────────────────────────────────────
+  // Cursor 
   const getCursor = (): string => {
     if (tool==='eraser') return 'cell';
     if (tool==='select') return selectState.current.mode==='moving' ? 'grabbing' : 'default';
@@ -595,7 +646,7 @@ export default function SketchbookCanvas() {
     { label:'Opacity', min:5,  max:100, value:opacity,   set:setOpacity,   display:`${opacity}%` },
   ];
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // Render 
   return (
     <>
       <style>{thumbCSS}</style>
@@ -634,6 +685,7 @@ export default function SketchbookCanvas() {
             <ToolBtn onClick={undo}        disabled={!canUndo} title="Undo"><UndoIcon/></ToolBtn>
             <ToolBtn onClick={redo}        disabled={!canRedo} title="Redo"><RedoIcon/></ToolBtn>
             <ToolBtn onClick={clearCanvas}                     title="Clear all"><TrashIcon/></ToolBtn>
+            <ToolBtn onClick={() => setShowSaveModal(true)} title="Save drawing"><SaveIcon/></ToolBtn>
 
             <Divider/>
 
@@ -758,6 +810,51 @@ export default function SketchbookCanvas() {
                     }}
                     className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-linear-to-br from-[#c9b8f0] to-[#f0b8d8] text-white shadow-[0_2px_8px_rgba(180,140,220,.3)] hover:opacity-90 transition-all cursor-pointer">
                     Place on Canvas ›
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Save Modal ── */}
+          {showSaveModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+              <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_40px_rgba(180,140,220,.3)] border border-white/90 p-5 w-[320px] flex flex-col gap-3">
+
+                <p className="text-[13px] font-semibold text-[#6b5b95]">Save Drawing</p>
+
+                <input
+                  autoFocus
+                  type="text"
+                  value={drawingTitle}
+                  onChange={e=>setDrawingTitle(e.target.value)}
+                  placeholder={`Doodle - ${today}`}
+                  className="w-full rounded-xl border border-[rgba(180,140,220,.3)] bg-white/80 px-3 py-2 text-sm text-[#4a3a6a] outline-none focus:border-[#c9b8f0] placeholder:text-[#c9b8f0] transition-colors"
+                />
+
+                {saveError && (
+                  <p className="text-[12px] text-red-500 font-medium">{saveError}</p>
+                )}
+
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={()=>{ setShowSaveModal(false); setSaveError(null); }}
+                    disabled={isSaving}
+                    className="px-4 py-1.5 rounded-xl text-xs font-semibold text-[#9b8ab4] hover:bg-[rgba(180,140,220,.1)] transition-all cursor-pointer disabled:opacity-50">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={()=>handleSaveDrawing(drawingTitle || `Doodle - ${today}`)}
+                    disabled={isSaving}
+                    className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-linear-to-br from-[#c9b8f0] to-[#f0b8d8] text-white shadow-[0_2px_8px_rgba(180,140,220,.3)] hover:opacity-90 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+                    {isSaving ? (
+                      <>
+                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>Save Drawing</> 
+                    )}
                   </button>
                 </div>
               </div>
