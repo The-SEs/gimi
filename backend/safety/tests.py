@@ -5,7 +5,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from safety.models import HighRiskPhrase, JournalEntry
+from safety.models import HighRiskPhrase
+from wellness.models import JournalEntry
 from safety.services import check_journal
 from users.models import CustomUser
 
