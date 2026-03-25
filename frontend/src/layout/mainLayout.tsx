@@ -1,10 +1,12 @@
-import { Outlet } from "react-router-dom";
-import GIMI from "../assets/GIMI_Icon.svg";
-import Consultation from "../components/header/consultation.tsx";
-import HelpAndResources from "../components/header/resources.tsx";
-import Account from "../components/header/account.tsx";
+import { Outlet } from "react-router-dom"
+import GIMI from "../assets/GIMI_Icon.svg"
+import Consultation from "../components/header/consultation.tsx"
+import HelpAndResources from "../components/header/resources.tsx"
+import Account from "../components/header/account.tsx"
+import { useAuth } from "../hooks/useAuth.ts"
 
 export default function MainLayout() {
+  const { user } = useAuth()
   return (
     <div className="min-h-screen min-w-screen flex flex-col font-sans text-gray-900 bg-linear-to-b from-[#EAF3FD] to-[#95C6FD] bg-fixed">
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between w-full px-4 md:px-8 py-4 gap-5 md:gap-0 bg-transparent min-h-24">
@@ -34,7 +36,7 @@ export default function MainLayout() {
             </div>
           </div>
           <div className="shrink-0">
-            <Account />
+            <Account name={user?.username || "Student"} />
           </div>
         </div>
       </header>
@@ -47,5 +49,5 @@ export default function MainLayout() {
         <p>Made with 💙 by JSE Team &copy; 2026 </p>
       </footer>
     </div>
-  );
+  )
 }
