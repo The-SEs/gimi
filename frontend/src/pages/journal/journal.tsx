@@ -1,8 +1,8 @@
-import MoodBoard from "../../components/mood-widget/MoodBoard.tsx";
-import SearchJournalEntry from "../../components/journal-widget/SearchJournalEntry.tsx";
-import Calendar from "../../components/journal/calendar.tsx";
-import GimiHeadIcon from "../../components/gimi-action-button/gimi-button.tsx";
-import JournalViewn from "../../components/journal-widget/DailyEntryEditor.tsx";
+import MoodBoard from "../../components/mood-widget/MoodBoard";
+import SearchJournalEntry from "../../components/journal-widget/SearchJournalEntry";
+import Calendar from "../../components/journal/calendar";
+import GimiHeadIcon from "../../components/gimi-action-button/gimi-button";
+import DailyEntryEditor from "../../components/journal-widget/DailyEntryEditor";
 
 export default function JournalPage() {
   return (
@@ -12,6 +12,7 @@ export default function JournalPage() {
       </div>
 
       <div className="mx-6 flex flex-col gap-6 lg:flex-row lg:gap-10">
+        {/* Sidebar */}
         <div className="flex flex-col gap-1 w-full lg:w-[350px] lg:flex-shrink-0">
           <div className="w-full rounded-xl p-4">
             <MoodBoard />
@@ -24,11 +25,9 @@ export default function JournalPage() {
           </div>
         </div>
 
+        {/* Main editor */}
         <div className="flex-1">
-          <JournalViewn />
-        </div>
-        <div className="flex-1">
-          <JournalEntryWidget />
+          <DailyEntryEditor />
         </div>
       </div>
     </div>
