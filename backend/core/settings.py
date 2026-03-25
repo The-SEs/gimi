@@ -113,8 +113,8 @@ ASGI_APPLICATION = "core.asgi.application"
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "100.93.60.3", "100.100.111.14"]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
