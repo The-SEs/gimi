@@ -9,6 +9,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useRef } from "react";
+import { consultationService } from "../../services/consultationService";
 
 export default function Consulation() {
   const [isVisible, setIsVisible] = useState(false);
@@ -17,6 +18,8 @@ export default function Consulation() {
 
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [reason, setReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeContainerRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +89,57 @@ export default function Consulation() {
       if (timeSlots[index] !== selectedTime) {
         setSelectedTime(timeSlots[index]);
       }
+    }
+  };
+
+  const getCombinedDateTime = () => {
+    if (!selectedDate || !selectedTime) return null;
+
+    const [time, modifier] = selectedTime.split(" ");
+    const [hours, minutes] = time.split(":");
+    let formattedHours = parseInt(hours, 10);
+
+    if (formattedHours === 12) formattedHours = 0;
+    if (modifier === "pm") formattedHours += 12;
+
+    const combined = new Date(selectedDate);
+    combined.setHours(formattedHours, parseInt(minutes, 10), 0, 0);
+    return combined.toISOString();
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedDate || !selectedTime || !selectedMode) {
+      alert("Please select a date, time, and mode of consultation.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const modeMap: Record<string, "ON" | "FF"> = {
+        Online: "ON",
+        "Face to face": "FF",
+      };
+
+      await consultationService.createConsultation({
+        requested_date: getCombinedDateTime()!,
+        mode_of_consultation: modeMap[selectedMode],
+        reason: reason,
+      });
+
+      alert("Consultation scheduled successfullly!");
+      setIsVisible(false);
+
+      window.dispatchEvent(new Event("consultation-added"));
+
+      setSelectedDate(null);
+      setSelectedTime(null);
+      setSelectedMode(nul);
+      setReason("");
+    } catch (error) {
+      console.error("Failed to schedule consultation:", error);
+      alert("Failed to schedule. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -348,6 +402,8 @@ export default function Consulation() {
                   Brief reason (optional)
                 </h2>
                 <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
                   className="w-full h-32 p-4 rounded-2xl bg-white border border-gray-100 shadow-sm text-sm placeholder:text-gray-400 resize-none outline-GIMI-blue"
                   placeholder="What would you like to discuss?"
                 ></textarea>
@@ -356,8 +412,16 @@ export default function Consulation() {
 
             {/* Sticky Footer Area */}
             <div className="shrink-0 p-6 md:p-8 pt-4 md:pt-4 bg-white border-t border-gray-100 md:border-none">
-              <button className="w-full bg-GIMI-blue text-white font-extrabold text-xl py-4 rounded-full transition-colors hover:bg-GIMI-blue/90">
-                Schedule
+              <button
+                onClick={handleSubmit}
+                disbaled={isSubmitting}
+                className={`w-full text-white font-extrabold text-xl py-4 rounded-full transition-colors ${
+                  isSubmitting
+                    ? "bg-gray-400"
+                    : "bg-GIMI-blue hover:bg-GIMI-blue/90"
+                }`}
+              >
+                {isSubmitting ? "Scheduling..." : "Schedule"}
               </button>
             </div>
           </div>

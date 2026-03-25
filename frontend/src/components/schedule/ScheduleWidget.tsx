@@ -1,12 +1,45 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  consultationService,
+  Consultation,
+} from "../../services/consultationService";
 
 const ScheduleWidget: React.FC = () => {
   // Use current system time as source
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchConsultations = async () => {
+      setIsLoading(true);
+      try {
+        const data = await consultationService.setConsultations();
+        setConsultations(data);
+      } catch (error) {
+        console.error("Failed to fetch consultations", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConsultations();
+
+    window.addEventListener("consultation-added", fetchConsultations);
+    return () =>
+      window.removeEventListener("consultation-added", fetchConsultations);
+  }, []);
+
+  const eventsForSelectedDate = useMemo(() => {
+    return consultations.filter((consultation) => {
+      const eventDate = new Date(consultation.requested_date);
+      return eventDate.toDateString() === selectedDate.toDateString();
+    });
+  }, [consultations, selectedDate]);
 
   // Helper: Format month name
-  const monthName = today.toLocaleString('default', { month: 'long' });
+  const monthName = today.toLocaleString("default", { month: "long" });
 
   // Helper: Generate the current week dates (Starting on Saturday)
   const weekDates = useMemo(() => {
@@ -42,7 +75,7 @@ const ScheduleWidget: React.FC = () => {
     return date.toDateString() === selectedDate.toDateString();
   };
 
-  const dayLabels = ['S', 'S', 'M', 'T', 'W', 'T', 'F']; // Sat, Sun, Mon, Tue, Wed, Thu, Fri
+  const dayLabels = ["S", "S", "M", "T", "W", "T", "F"]; // Sat, Sun, Mon, Tue, Wed, Thu, Fri
 
   return (
     <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden p-6 md:p-8">
@@ -61,7 +94,7 @@ const ScheduleWidget: React.FC = () => {
         {dayLabels.map((label, idx) => (
           <div
             key={`${label}-${idx}`}
-            className={`text-xs md:text-sm font-bold ${idx < 2 ? 'text-gray-400' : 'text-blue-900 opacity-60'}`}
+            className={`text-xs md:text-sm font-bold ${idx < 2 ? "text-gray-400" : "text-blue-900 opacity-60"}`}
           >
             {label}
           </div>
@@ -79,14 +112,17 @@ const ScheduleWidget: React.FC = () => {
               key={date.toISOString()}
               onClick={() => setSelectedDate(date)}
               className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200
-                  ${selected
-                  ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                  : 'bg-blue-50/30 text-gray-900 hover:bg-blue-50'
-                }
-                  ${todayStatus && !selected ? 'ring-2 ring-blue-200 font-bold' : ''}
+                  ${
+                    selected
+                      ? "bg-blue-600 text-white shadow-md transform scale-105"
+                      : "bg-blue-50/30 text-gray-900 hover:bg-blue-50"
+                  }
+                  ${todayStatus && !selected ? "ring-2 ring-blue-200 font-bold" : ""}
                 `}
             >
-              <span className={`text-sm md:text-lg font-bold ${!selected && idx < 2 ? 'text-gray-300' : ''}`}>
+              <span
+                className={`text-sm md:text-lg font-bold ${!selected && idx < 2 ? "text-gray-300" : ""}`}
+              >
                 {date.getDate()}
               </span>
             </button>
@@ -95,33 +131,75 @@ const ScheduleWidget: React.FC = () => {
       </div>
 
       {/* Event Section */}
-      <div className="bg-blue-50/30 rounded-2xl p-4 md:p-6 border border-blue-50/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {/* Blue accent bar */}
-            <div className="w-1.5 h-12 bg-blue-500 rounded-full"></div>
-
-            <div>
-              <h3 className="text-gray-900 font-bold text-sm md:text-base">
-                Math Counseling
-              </h3>
-              <p className="text-gray-400 text-xs md:text-sm mt-0.5">
-                02:30 PM - Zoom
-              </p>
-            </div>
+      <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2">
+        {isLoading ? (
+          <div className="text-center text-gray-400 text-sm py-4">
+            Loading schedule...
           </div>
+        ) : eventsForSelectedDate.length === 0 ? (
+          <div className="bg-gray-50 rounded-2xl p-4 md:p-6 border border-gray-100 text-center text-gray-400 text-sm">
+            No consultations scheduled for this day.
+          </div>
+        ) : (
+          eventsForSelectedDate.map((event) => {
+            // Format time (e.g., "02:30 PM")
+            const eventTime = new Date(event.requested_date).toLocaleTimeString(
+              [],
+              {
+                hour: "2-digit",
+                minute: "2-digit",
+              },
+            );
+            const modeText =
+              event.mode_of_consultation === "ON" ? "Online" : "Face-to-Face";
 
-          <button className="text-gray-300 hover:text-blue-600 transition-colors">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-5 h-5"
-            >
-              <path fillRule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
+            // Map status to color bar
+            let statusColor = "bg-yellow-500"; // Pending
+            if (event.status === "SC") statusColor = "bg-blue-500"; // Scheduled
+            if (event.status === "CO") statusColor = "bg-green-500"; // Completed
+            if (event.status === "CA") statusColor = "bg-red-500"; // Cancelled
+
+            return (
+              <div
+                key={event.id}
+                className="bg-blue-50/30 rounded-2xl p-4 md:p-6 border border-blue-50/50"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {/* Dynamic status color bar */}
+                    <div
+                      className={`w-1.5 h-12 ${statusColor} rounded-full`}
+                    ></div>
+
+                    <div>
+                      <h3 className="text-gray-900 font-bold text-sm md:text-base capitalize">
+                        {event.reason || "Consultation Request"}
+                      </h3>
+                      <p className="text-gray-400 text-xs md:text-sm mt-0.5">
+                        {eventTime} - {modeText}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button className="text-gray-300 hover:text-blue-600 transition-colors">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
