@@ -13,7 +13,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
   const { register, status } = useAuth();
 
   // UI States
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,17 +32,11 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
     e.preventDefault();
     setErrors({});
 
-    // Split name into first and last for the API
-    const nameParts = name.trim().split(" ");
-    const first_name = nameParts[0] || "";
-    const last_name = nameParts.slice(1).join(" ") || "";
-
     try {
       await register({
         email,
-        first_name,
-        last_name,
-        password,
+        username,
+        password: password,
         password_confirm: confirmPassword,
       });
       navigate("/onboarding-questions");
@@ -116,18 +110,18 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Name Field */}
+          {/* Nickname Field */}
           <div>
             <input
               type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="Nickname"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full rounded-xl border border-blue-400 bg-white/70 px-4 py-3.5 text-gray-700 placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
-            {getFieldError("first_name") && (
+            {getFieldError("username") && (
               <p className="mt-1 text-xs text-red-500 ml-1">
-                {getFieldError("first_name")}
+                {getFieldError("username")}
               </p>
             )}
           </div>

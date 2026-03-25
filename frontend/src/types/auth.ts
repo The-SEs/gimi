@@ -24,8 +24,8 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   username: string;
   email: string;
-  password1: string;
-  password2: string;
+  password: string;
+  password_confirm: string;
 }
 
 // API Response ShapesA
