@@ -23,7 +23,8 @@ export default function MoodBoard () {
     };
 
     return (
-        <div className="relative w-[90%] mx-auto items-center mt-5 lg:w-[40%] xl:w-[30%]">
+        //<div className="relative w-[90%] mx-auto items-center mt-5 lg:w-[40%] xl:w-[30%]"> //ORIGINAL; changed it to the one below due to issues in the journal page view.
+        <div className="relative w-full max-w-[320px] mx-auto mt-5 sm:max-w-[360px] lg:max-w-none">
             <div className="absolute -top-3 left-3/4 -translate-x-1/4 w-20 h-6 bg-blue-300/40 backdrop-blur-[1px] border-l border-r border-white/20 -rotate-2 shadow-sm z-10"></div>
                 <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4">
 
