@@ -2,6 +2,7 @@ import MoodBoard from "../../components/mood-widget/MoodBoard.tsx";
 import SearchJournalEntry from "../../components/journal-widget/SearchJournalEntry.tsx";
 import Calendar from "../../components/journal/calendar.tsx";
 import GimiHeadIcon from "../../components/gimi-action-button/gimi-button.tsx";
+import JournalEntryWidget from "../../components/journal-widget/JournalEntryWidget.tsx";
 
 export default function JournalPage() {
   return (
@@ -14,6 +15,9 @@ export default function JournalPage() {
           <MoodBoard />
           <SearchJournalEntry />
           <Calendar />
+        </div>
+        <div className="flex-1">
+          <JournalEntryWidget />
         </div>
       </div>
     </div>

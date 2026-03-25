@@ -20,17 +20,9 @@ class JournalEntrySerializer(serializers.ModelSerializer):
 class DailyMoodSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyMood
-        fields = ["id", "date", "state"]
-        read_only_fields = ["id", "date"]
+        fields = ["id", "date", "updated_at", "state"]
+        read_only_fields = ["id", "date", "updated_at"]
 
-    def validate(self, attrs):
-        user = self.context["request"].user
-        today = timezone.now().date()
-        if DailyMood.objects.filter(user=user, date=today).exists():
-            raise serializers.ValidationError(
-                {"detail": "You have already logged your mood for today."}
-            )
-        return attrs
 
 class VectorDrawingSerializer(serializers.ModelSerializer):
     class Meta:

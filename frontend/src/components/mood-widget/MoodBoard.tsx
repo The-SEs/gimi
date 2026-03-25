@@ -2,59 +2,146 @@ import calmMood from "../../assets/calm-mood.svg";
 import annoyedMood from "../../assets/annoyed-mood.svg";
 import neutralMood from "../../assets/neutral-mood.svg";
 import sadMood from "../../assets/sad-mood.svg";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../../services/api";
 
-export default function MoodBoard () {
+type DailyMoodState = "HP" | "SD" | "AN" | "CM";
 
-    const [icon, setIcon] = useState(calmMood);
-    const [mood, setMood] = useState("Neutral");
-    const [time, setTime] = useState("");
+type DailyMoodResponse = {
+    id: number;
+    date: string;
+    updated_at: string;
+    state: DailyMoodState;
+};
 
-    const handleMoodSelection = (name: string, svg: string) => {
-    setMood(name);
-    setIcon(svg);
+type MoodEntry = {
+    label: string;
+    icon: string;
+    state: DailyMoodState;
+};
 
-    const currentTime = new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+const MOODS: MoodEntry[] = [
+    { label: "Calm",    icon: calmMood,    state: "CM" },
+    { label: "Annoyed", icon: annoyedMood, state: "AN" },
+    { label: "Neutral", icon: neutralMood, state: "HP" },
+    { label: "Sad",     icon: sadMood,     state: "SD" },
+];
 
-    setTime(currentTime);
+const STATE_TO_MOOD: Record<DailyMoodState, MoodEntry> = Object.fromEntries(
+    MOODS.map((m) => [m.state, m])
+) as Record<DailyMoodState, MoodEntry>;
+
+const todayYMD = () => new Date().toISOString().slice(0, 10);
+
+const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+
+const extractError = (err: unknown, fallback: string): string => {
+    const e = err as { response?: { data?: { detail?: unknown } }; message?: unknown };
+    const detail = e.response?.data?.detail;
+    if (typeof detail === "string") return detail;
+    if (typeof e.message === "string") return e.message;
+    return fallback;
+};
+
+type SavedMood = {
+    state: DailyMoodState;
+    date: string;
+    updatedAt: string;
+};
+
+export default function MoodBoard() {
+    const [saved, setSaved] = useState<SavedMood | null>(null);
+    const [current, setCurrent] = useState<MoodEntry>(MOODS[2]); // Default: Neutral
+    const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+    const [errorMsg, setErrorMsg] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    const applyMoodResponse = (data: DailyMoodResponse) => {
+        const mood = STATE_TO_MOOD[data.state];
+        setCurrent(mood);
+        setSaved({ state: data.state, date: data.date, updatedAt: data.updated_at });
+    };
+
+    const loadTodayMood = async () => {
+        try {
+            setStatus("loading");
+            const { data } = await api.get<DailyMoodResponse[]>("/api/wellness/daily-moods/");
+            const todaysEntry = data.find((m) => m.date === todayYMD());
+
+            if (todaysEntry) {
+                applyMoodResponse(todaysEntry);
+            } else {
+                setCurrent(MOODS[2]);
+                setSaved(null);
+            }
+
+            setStatus("ready");
+        } catch (err) {
+            setStatus("error");
+            setErrorMsg(extractError(err, "Failed to load mood data."));
+        }
+    };
+
+    useEffect(() => {
+        loadTodayMood();
+        window.addEventListener("daily-mood:updated", loadTodayMood);
+        return () => window.removeEventListener("daily-mood:updated", loadTodayMood);
+    }, []);
+
+    const handleMoodSelection = async (mood: MoodEntry) => {
+        setErrorMsg("");
+        if (saving) return;
+
+        const isLoggedToday = saved?.date === todayYMD();
+        if (isLoggedToday && saved?.state === mood.state) return;
+        if (isLoggedToday && !window.confirm("Are you sure you want to change your mood for the day?")) return;
+
+        try {
+            setSaving(true);
+            const { data } = await api.post<DailyMoodResponse>("/api/wellness/daily-moods/", {
+                state: mood.state,
+            });
+            applyMoodResponse(data);
+        } catch (err) {
+            setErrorMsg(extractError(err, "Failed to save mood."));
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
-        //<div className="relative w-[90%] mx-auto items-center mt-5 lg:w-[40%] xl:w-[30%]"> //ORIGINAL; changed it to the one below due to issues in the journal page view.
-        <div className="relative w-full max-w-[320px] mx-auto mt-5 sm:max-w-[360px] lg:max-w-none">
-            <div className="absolute -top-3 left-3/4 -translate-x-1/4 w-20 h-6 bg-blue-300/40 backdrop-blur-[1px] border-l border-r border-white/20 -rotate-2 shadow-sm z-10"></div>
-                <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4">
+        <div className="relative w-[90%] mx-auto items-center mt-5 lg:w-[40%] xl:w-[30%]">
+            <div className="absolute -top-3 left-3/4 -translate-x-1/4 w-20 h-6 bg-blue-300/40 backdrop-blur-[1px] border-l border-r border-white/20 -rotate-2 shadow-sm z-10" />
+            <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4 shadow-sm">
+                <h2 className="text-2xl text-[#1E40AF] font-bold">Mood of the Day</h2>
 
-                    <h2 className="text-2xl text-[#1E40AF] font-bold font-liberation">Mood of the Day</h2>
-
-                    <div className="border-1 border-dashed border-[#D0E1FD] rounded-xl flex flex-col gap-1 items-center py-5">
-                        <img src={icon} alt={mood} className="w-12 h-12" />
-                        <p className="text-xl text-[#3B82F6] font-semibold">{mood}</p>
-                        <p className="text-sm text-[#C7CAD1]">Saved at {time}</p>
-                    </div>
-
-                    <div className="flex gap-5 px-5 pb-3 justify-center md:gap-10">
-                        <button className="transition-transform duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
-                            onClick={() => handleMoodSelection("Calm", calmMood)}>
-                            <img src={calmMood} alt="Calm Mood" />
-                        </button>
-                        <button className="transition-transform duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
-                            onClick={() => handleMoodSelection("Annoyed", annoyedMood)}>
-                            <img src={annoyedMood} alt="Annoyed Mood" />
-                        </button>
-                        <button className="transition-transform duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
-                            onClick={() => handleMoodSelection("Netural", neutralMood)}>
-                            <img src={neutralMood} alt="Neutral Mood" />
-                        </button>
-                        <button className="transition-transform duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer"
-                            onClick={() => handleMoodSelection("Sad", sadMood)}>
-                            <img src={sadMood} alt="Sad Mood" />
-                        </button>
-                    </div>
+                <div className="border-1 border-dashed border-[#D0E1FD] rounded-xl flex flex-col gap-1 items-center py-5">
+                    <img src={current.icon} alt={current.label} className="w-12 h-12" />
+                    {saved && <p className="text-xl text-[#3B82F6] font-semibold">{current.label}</p>}
+                    <p className="text-sm text-[#C7CAD1]">
+                        {saved
+                            ? `Updated today at ${formatTime(saved.updatedAt)}`
+                            : "No mood logged for the day"}
+                    </p>
                 </div>
+
+                <div className="flex gap-5 px-5 pb-3 justify-center md:gap-10">
+                    {MOODS.map((mood) => (
+                        <button
+                            key={mood.state}
+                            className="transition-transform duration-300 hover:scale-110 hover:-translate-y-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            onClick={() => handleMoodSelection(mood)}
+                            disabled={saving}
+                        >
+                            <img src={mood.icon} alt={mood.label} />
+                        </button>
+                    ))}
+                </div>
+
+                {errorMsg && <p className="text-xs text-red-400 text-center px-2">{errorMsg}</p>}
+                {saving && <p className="text-xs text-[#93C5FD] text-center px-2 animate-pulse">Saving...</p>}
+            </div>
         </div>
     );
 }
