@@ -336,7 +336,7 @@ export default function SketchbookCanvas() {
     } finally {
       setIsSaving(false);
     }
-  };────
+  };
   function getObjBounds(obj: CanvasObj): Bounds | null {
     const dx=obj.dx, dy=obj.dy;
     if (obj.type==='stroke') {
