@@ -90,6 +90,13 @@ const SaveIcon = () => (
     <polyline points="7 3 7 8 15 8"/>
   </svg>
 );
+const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
 
 //  Constants 
 const PALETTE = [
@@ -199,6 +206,7 @@ export default function SketchbookCanvas() {
   const [saveError,    setSaveError]    = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
 
+
   // Refs that don't need to trigger re-renders 
   const selectState   = useRef<SelectState>({ mode:'idle', lassoStart:null, lassoRect:null, dragStart:null, origPositions:null });
   const historyRef    = useRef<string[]>([]);
@@ -303,9 +311,13 @@ export default function SketchbookCanvas() {
   //  Save drawing to backend 
   const serializeCanvasData = useCallback(() => {
     // Strip non-serializable HTMLImageElement
-    return objects.map(o =>
-      o.type === 'image' ? { ...o, img: undefined } : o
-    );
+    return objects.map(o => {
+      if (o.type === 'image') {
+        const { img, ...rest } = o;
+        return rest;
+      }
+      return o;
+    });
   }, [objects]);
 
   const handleSaveDrawing = async (title: string) => {
@@ -321,22 +333,37 @@ export default function SketchbookCanvas() {
       const canvasData = serializeCanvasData();
       const result = await canvasService.saveDrawing(title, canvasData, drawingId || undefined);
 
+      // Validate response structure
+      if (!result || typeof result.id !== 'number') {
+        throw new Error('Invalid response from server');
+      }
+
       // Update the drawing ID if this was a new drawing
       if (!drawingId) {
         setDrawingId(result.id);
-        setDrawingTitle(title);
       }
 
+      // Reset title and close modal after successful save
+      setDrawingTitle('');
       setShowSaveModal(false);
-      // Optional: show a success toast/notification here
+
+      // Show success notification (via console for now)
+      console.log(`✓ Drawing saved successfully${drawingId ? ' (updated)' : ' (created)'}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save drawing';
+      let message = 'Failed to save drawing';
+      if (err instanceof Error) {
+        if (err.message.includes('401')) message = 'Not authenticated. Please log in';
+        else if (err.message.includes('400')) message = 'Invalid data. Please check your input';
+        else if (err.message.includes('500')) message = 'Server error. Please try again later';
+        else message = err.message;
+      }
       setSaveError(message);
       console.error('Failed to save drawing:', err);
     } finally {
       setIsSaving(false);
     }
   };
+
   function getObjBounds(obj: CanvasObj): Bounds | null {
     const dx=obj.dx, dy=obj.dy;
     if (obj.type==='stroke') {
@@ -411,6 +438,83 @@ export default function SketchbookCanvas() {
     setCanUndo(false);
     setCanRedo(false);
   };
+
+  const handleDownloadDrawing = useCallback(() => {
+  const canvas = canvasRef.current;
+  if (!canvas) return;
+
+  try {
+    // Create a new canvas with the same dimensions as the displayed canvas
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+
+    const ctx = exportCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fill with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    // Draw ALL objects manually to ensure they're captured correctly
+    // This is more reliable than copying the canvas since the canvas might not be fully rendered
+    objects.forEach(obj => {
+      ctx.save();
+      ctx.translate(obj.dx, obj.dy);
+
+      if (obj.type === 'stroke') {
+        const { r, g, b } = hexToRgb(obj.color);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${obj.opacity})`;
+        ctx.lineWidth = obj.lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (let i = 0; i < obj.points.length; i += 2) {
+          i === 0 
+            ? ctx.moveTo(obj.points[i], obj.points[i + 1])
+            : ctx.lineTo(obj.points[i], obj.points[i + 1]);
+        }
+        ctx.stroke();
+      } else if (obj.type === 'text') {
+        const { r, g, b } = hexToRgb(obj.color);
+        ctx.fillStyle = `rgba(${r},${g},${b},${obj.opacity})`;
+        ctx.font = `${obj.italic ? 'italic ' : ''}${obj.bold ? 'bold ' : ''}${obj.fontSize}px ${obj.font}`;
+        ctx.fillText(obj.text, obj.x, obj.y);
+      } else if (obj.type === 'image') {
+        ctx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
+      }
+
+      ctx.restore();
+    });
+
+    // Convert to blob and download
+    exportCanvas.toBlob((blob) => {
+      if (!blob) {
+        console.error('Failed to create blob');
+        return;
+      }
+      
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `Doodle-${today.replace(/,?\s+/g, '-')}.png`;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 100);
+    }, 'image/png', 1.0);
+    
+  } catch (error) {
+    console.error('Error downloading drawing:', error);
+    setSaveError('Failed to download drawing');
+  }
+}, [objects, today]);
 
   //  Canvas coordinate helper 
   const getPos = (e: React.MouseEvent | React.TouchEvent): Pos => {
@@ -686,6 +790,7 @@ export default function SketchbookCanvas() {
             <ToolBtn onClick={redo}        disabled={!canRedo} title="Redo"><RedoIcon/></ToolBtn>
             <ToolBtn onClick={clearCanvas}                     title="Clear all"><TrashIcon/></ToolBtn>
             <ToolBtn onClick={() => setShowSaveModal(true)} title="Save drawing"><SaveIcon/></ToolBtn>
+            <ToolBtn onClick={handleDownloadDrawing} title="Download as image"><DownloadIcon/></ToolBtn>
 
             <Divider/>
 
@@ -838,7 +943,7 @@ export default function SketchbookCanvas() {
 
                 <div className="flex gap-2 justify-end">
                   <button
-                    onClick={()=>{ setShowSaveModal(false); setSaveError(null); }}
+                    onClick={()=>{ setShowSaveModal(false); setSaveError(null); setDrawingTitle(''); }}
                     disabled={isSaving}
                     className="px-4 py-1.5 rounded-xl text-xs font-semibold text-[#9b8ab4] hover:bg-[rgba(180,140,220,.1)] transition-all cursor-pointer disabled:opacity-50">
                     Cancel
@@ -860,7 +965,6 @@ export default function SketchbookCanvas() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </>
