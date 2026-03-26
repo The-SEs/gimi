@@ -1,7 +1,8 @@
 import json
 import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
-
+from asgiref.sync import sync_to_async  # <-- 1. Import this tool
+from safety.services import check_journal  # <-- 2. Import your safety logic
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -12,6 +13,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             user_message = data.get("message")
 
+            # --- THE INTERCEPTOR ---
+            # 3. Safely run the synchronous DB check inside this async environment
+            is_dangerous, matched_phrase, distance = await sync_to_async(check_journal)(user_message)
+
+            if is_dangerous:
+                # 4. If dangerous, send the safety message and STOP.
+                warning_message = "We noticed you might be going through a tough time. Would you like to schedule a talk with the school counselor?"
+
+                await self.send(text_data=json.dumps({
+                    "message": warning_message,
+                    "done": True,
+                    "is_flagged": True  # You can use this flag in React to turn the message red!
+                }))
+
+                return  # <-- CRITICAL: Exit the function so Ollama is never called
+            # -----------------------
+
+            # 5. IF SAFE, PROCEED WITH OLLAMA STREAMING
             url = "http://100.93.60.3:11434/api/generate"
             payload = {"model": "llama3.2", "prompt": user_message, "stream": True}
 
