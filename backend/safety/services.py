@@ -6,19 +6,28 @@ def check_journal(student_text):
     # Ask server to turn the new text into math
     try:
         student_vector = get_embedding(student_text)
+
     except Exception as e:
         print(f"Failed to connect to AI server: {e}")
-        return False, None
+        # BUG FIX: changed from (False, None) to return 3 items to match views.py expectations
+        return False, None, None
 
     # Ask postgres to find the closest phrase mathematically
     closest_match = HighRiskPhrase.objects.annotate(
         distance=CosineDistance('embedding', student_vector)
     ).order_by('distance').first()
 
+    print("\n--- AI SAFETY CHECKER DEBUG ---")
+    if closest_match:
+        print(f"Student typed: '{student_text}'")
+        print(f"Closest DB Match: '{closest_match.text}'")
+        print(f"Math Distance: {closest_match.distance} (Must be under 0.30 to flag)")
+    else:
+        print("WARNING: closest_match is None! Your HighRiskPhrase database is empty!")
+    print("-------------------------------\n")
+
     # Threshold (Lower distance = more similar)
-    THRESHOLD = 0.30
-
-
+    THRESHOLD = 0.32
 
     is_dangerous = closest_match and closest_match.distance < THRESHOLD
 

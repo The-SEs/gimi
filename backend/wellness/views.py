@@ -63,7 +63,8 @@ class JournalListCreateView(generics.ListCreateAPIView):
             return Response({
                 'status': 'high_risk',
                 'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
-                'journal_id': entry.id
+                'id': entry.id
+                **serializer.data
             }, status=status.HTTP_201_CREATED)
 
         else:
@@ -80,7 +81,8 @@ class JournalListCreateView(generics.ListCreateAPIView):
                 'status': 'success',
                 'message': 'Journal saved successfully',
                 'ai_response': ai_reply,
-                'journal_id': entry.id
+                'id': entry.id
+                **serializer.data
             }, status=status.HTTP_201_CREATED)
 
 
@@ -93,10 +95,49 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return JournalEntry.objects.filter(user=self.request.user).select_related("mood")
 
-    def perform_update(self, serializer):
-        entry = serializer.save()
-        if "content" in self.request.data:
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        # Get the new content the user is trying to save
+        content = serializer.validated_data.get('content', instance.content)
+
+        if not content:
+            raise ValidationError({"content": "Journal cannot be empty"})
+
+        # 1. Run the safety interceptor on the updated text
+        is_dangerous, matched_phrase, distance = check_journal(content)
+
+        if is_dangerous:
+            entry = serializer.save(is_flagged=True)
             _save_mood(entry)
+
+            return Response({
+                'status': 'high_risk',
+                'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
+                'id': entry.id,
+                **serializer.data # <-- Sends back the full entry data for React
+            }, status=status.HTTP_200_OK)
+
+        else:
+            # 2. Get the new AI response if it is safe
+            ai_reply = get_llama_response(content)
+
+            entry = serializer.save(
+                is_flagged=False,
+                ai_chat_response=ai_reply
+            )
+            _save_mood(entry)
+
+            return Response({
+                'status': 'success',
+                'message': 'Journal updated successfully',
+                'ai_response': ai_reply,
+                'id': entry.id,
+                **serializer.data # <-- Sends back the full entry data for React
+            }, status=status.HTTP_200_OK)
 
 
 # mood analyzed by ai from journal
