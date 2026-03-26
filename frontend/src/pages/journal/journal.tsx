@@ -1,5 +1,4 @@
 import MoodBoard from "../../components/mood-widget/MoodBoard";
-import SearchJournalEntry from "../../components/journal-widget/SearchJournalEntry";
 import Calendar from "../../components/journal/calendar";
 import GimiHeadIcon from "../../components/gimi-action-button/gimi-button";
 import DailyEntryEditor from "../../components/journal-widget/DailyEntryEditor";
@@ -14,11 +13,8 @@ export default function JournalPage() {
       <div className="mx-6 flex flex-col gap-6 lg:flex-row lg:gap-10">
         {/* Sidebar */}
         <div className="flex flex-col gap-1 w-full lg:w-[350px] lg:flex-shrink-0">
-          <div className="w-full rounded-xl p-4">
+          <div className="w-full mt-0">
             <MoodBoard />
-          </div>
-          <div className="w-full rounded-xl p-4">
-            <SearchJournalEntry />
           </div>
           <div className="w-full rounded-xl p-4">
             <Calendar />

@@ -124,7 +124,7 @@ export default function MoodBoard({ className = "" }: MoodBoardProps) {
   }
 
   return (
-    <div className={`relative w-[90%] mx-auto items-center mt-5 lg:w-[40%] xl:w-[30%] ${className}`}>
+    <div className={`relative ${className}`}>
       <div className="absolute -top-3 left-3/4 -translate-x-1/4 w-20 h-6 bg-blue-300/40 backdrop-blur-[1px] border-l border-r border-white/20 -rotate-2 shadow-sm z-10" />
       <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4 shadow-sm">
         <h2 className="text-2xl text-[#1E40AF] font-bold">Mood of the Day</h2>
