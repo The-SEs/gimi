@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TermsAndConditions from "../../components/consent-widgets/termsandconditions-modal";
 import Disclaimers from "../../components/consent-widgets/disclaimers-modal";
-import PrivacyPolicy from "../../components/consent-widgets/privacypolicy-modal"; 
+import PrivacyPolicy from "../../components/consent-widgets/privacypolicy-modal";
 
 interface ToggleItem {
   id: string;
@@ -93,19 +93,60 @@ function ConsentRow({
 export default function ConsentPage() {
   const navigate = useNavigate();
 
+  // All toggles start OFF (false)
   const [toggles, setToggles] = useState<Record<string, boolean>>({
-    disclaimer: true,
-    terms: true,
-    data: true,
-    privacy: true,
+    disclaimer: false,
+    terms: false,
+    data: false,
+    privacy: false,
   });
 
   const [showTerms, setShowTerms] = useState(false);
   const [showDisclaimers, setShowDisclaimers] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
 
-  const toggle = (id: string) =>
-    setToggles((prev) => ({ ...prev, [id]: !prev[id] }));
+  // Handle toggle click - if turning ON, show modal; if turning OFF, just toggle
+  const handleToggle = (id: string) => {
+    const isCurrentlyOff = !toggles[id];
+    
+    if (isCurrentlyOff) {
+      // User is turning the toggle ON - show the respective modal
+      switch (id) {
+        case "disclaimer":
+          setShowDisclaimers(true);
+          break;
+        case "terms":
+          setShowTerms(true);
+          break;
+        case "privacy":
+          setShowPrivacy(true);
+          break;
+        case "data":
+          // No modal for this one yet, just toggle it on
+          setToggles((prev) => ({ ...prev, [id]: true }));
+          break;
+      }
+    } else {
+      // User is turning the toggle OFF - just toggle it
+      setToggles((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  // Handle modal close - turn on the respective toggle when modal is closed
+  const handleDisclaimersClose = () => {
+    setShowDisclaimers(false);
+    setToggles((prev) => ({ ...prev, disclaimer: true }));
+  };
+
+  const handleTermsClose = () => {
+    setShowTerms(false);
+    setToggles((prev) => ({ ...prev, terms: true }));
+  };
+
+  const handlePrivacyClose = () => {
+    setShowPrivacy(false);
+    setToggles((prev) => ({ ...prev, privacy: true }));
+  };
 
   const allChecked = Object.values(toggles).every(Boolean);
 
@@ -146,10 +187,10 @@ export default function ConsentPage() {
 
   return (
     <>
-      {/* Modals */}
-      <TermsAndConditions isOpen={showTerms} onClose={() => setShowTerms(false)} />
-      <Disclaimers isOpen={showDisclaimers} onClose={() => setShowDisclaimers(false)} />
-      <PrivacyPolicy isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+      {/* Modals - toggle turns ON when modal is closed */}
+      <TermsAndConditions isOpen={showTerms} onClose={handleTermsClose} />
+      <Disclaimers isOpen={showDisclaimers} onClose={handleDisclaimersClose} />
+      <PrivacyPolicy isOpen={showPrivacy} onClose={handlePrivacyClose} />
 
       <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
         {/* Background */}
@@ -194,7 +235,7 @@ export default function ConsentPage() {
                     item={item}
                     suffix="to GIMI Journal"
                     checked={toggles[item.id]}
-                    onChange={() => toggle(item.id)}
+                    onChange={() => handleToggle(item.id)}
                   />
                 ))}
               </div>
@@ -211,7 +252,7 @@ export default function ConsentPage() {
                     key={item.id}
                     item={item}
                     checked={toggles[item.id]}
-                    onChange={() => toggle(item.id)}
+                    onChange={() => handleToggle(item.id)}
                   />
                 ))}
               </div>

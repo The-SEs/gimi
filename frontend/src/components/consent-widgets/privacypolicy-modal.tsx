@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const sections = [
   {
@@ -132,14 +132,48 @@ interface PrivacyPolicyProps {
 
 export default function PrivacyPolicy({ isOpen, onClose }: PrivacyPolicyProps) {
   const [mounted, setMounted] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) setMounted(true);
-    else {
+    if (isOpen) {
+      setMounted(true);
+      setHasScrolledToBottom(false);
+    } else {
       const t = setTimeout(() => setMounted(false), 200);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
+
+  // Check if content is short enough that no scrolling is needed
+  const checkIfAlreadyAtBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollHeight <= el.clientHeight + 2) {
+      setHasScrolledToBottom(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mounted && isOpen) {
+      // Small delay to let the DOM render before measuring
+      const t = setTimeout(checkIfAlreadyAtBottom, 50);
+      return () => clearTimeout(t);
+    }
+  }, [mounted, isOpen, checkIfAlreadyAtBottom]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el || hasScrolledToBottom) return;
+    // Allow a small threshold (2px) for rounding
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+      setHasScrolledToBottom(true);
+    }
+  };
+
+  const handleClose = () => {
+    if (hasScrolledToBottom) onClose();
+  };
 
   if (!mounted) return null;
 
@@ -151,51 +185,42 @@ export default function PrivacyPolicy({ isOpen, onClose }: PrivacyPolicyProps) {
         opacity: isOpen ? 1 : 0,
         transition: "opacity 0.2s",
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative w-full sm:w-[520px] max-h-[80vh] flex flex-col rounded-3xl overflow-hidden bg-white"
         style={{
-          boxShadow: "0 8px 40px rgba(30,60,100,0.18), 0 2px 8px rgba(30,60,100,0.10)",
-          transform: isOpen ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
+          boxShadow:
+            "0 8px 40px rgba(30,60,100,0.18), 0 2px 8px rgba(30,60,100,0.10)",
+          transform: isOpen
+            ? "translateY(0) scale(1)"
+            : "translateY(16px) scale(0.97)",
           transition: "transform 0.2s, opacity 0.2s",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-7 pt-7 pb-5 shrink-0"
+          className="flex items-center px-7 pt-7 pb-5 shrink-0"
           style={{ borderBottom: "1px solid #e2ecf8" }}
         >
           <div>
-            <p className="text-xs font-semibold tracking-widest uppercase mb-0.5" style={{ color: "#3a6ec4" }}>
+            <p
+              className="text-xs font-semibold tracking-widest uppercase mb-0.5"
+              style={{ color: "#3a6ec4" }}
+            >
               GIMI Journal · iACADEMY Cebu
             </p>
             <h2 className="text-xl font-bold text-gray-900">Privacy Policy</h2>
           </div>
-
-          <button
-            onClick={onClose}
-            className="rounded-xl p-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            style={{
-              borderStyle: "solid",
-              borderColor: "#7D9DC9",
-              borderTopWidth: "1px",
-              borderLeftWidth: "1px",
-              borderRightWidth: "1px",
-              borderBottomWidth: "3px",
-              background: "rgba(210,235,255,0.40)",
-              color: "#2c5aa0",
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto px-7 py-5 space-y-5 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="overflow-y-auto px-7 py-5 space-y-5 flex-1"
+        >
           {sections.map((section) => (
             <div key={section.number}>
               {/* Section heading */}
@@ -210,13 +235,18 @@ export default function PrivacyPolicy({ isOpen, onClose }: PrivacyPolicyProps) {
                 >
                   {section.number}
                 </span>
-                <h3 className="text-sm font-bold text-gray-900">{section.title}</h3>
+                <h3 className="text-sm font-bold text-gray-900">
+                  {section.title}
+                </h3>
               </div>
 
               <div className="pl-8 space-y-2">
                 {/* Body paragraphs */}
                 {section.content.map((para, i) => (
-                  <p key={i} className="text-sm text-gray-700 leading-relaxed">
+                  <p
+                    key={i}
+                    className="text-sm text-gray-700 leading-relaxed"
+                  >
                     {para}
                   </p>
                 ))}
@@ -225,9 +255,20 @@ export default function PrivacyPolicy({ isOpen, onClose }: PrivacyPolicyProps) {
                 {"subsections" in section && section.subsections && (
                   <div className="space-y-2 mt-1">
                     {section.subsections.map((sub, i) => (
-                      <div key={i} className="rounded-xl px-3 py-2.5" style={{ background: "rgba(210,235,255,0.30)", borderLeft: "3px solid #3a6ec4" }}>
-                        <p className="text-xs font-bold text-gray-800 mb-0.5">{sub.label}</p>
-                        <p className="text-sm text-gray-700 leading-relaxed">{sub.text}</p>
+                      <div
+                        key={i}
+                        className="rounded-xl px-3 py-2.5"
+                        style={{
+                          background: "rgba(210,235,255,0.30)",
+                          borderLeft: "3px solid #3a6ec4",
+                        }}
+                      >
+                        <p className="text-xs font-bold text-gray-800 mb-0.5">
+                          {sub.label}
+                        </p>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {sub.text}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -237,7 +278,10 @@ export default function PrivacyPolicy({ isOpen, onClose }: PrivacyPolicyProps) {
                 {"bullets" in section && section.bullets && (
                   <ul className="space-y-1.5 mt-1">
                     {section.bullets.map((b, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm text-gray-700"
+                      >
                         <span
                           className="mt-2 shrink-0 rounded-full"
                           style={{ width: 5, height: 5, background: "#3a6ec4" }}
@@ -256,22 +300,47 @@ export default function PrivacyPolicy({ isOpen, onClose }: PrivacyPolicyProps) {
                 )}
               </div>
 
-              <div className="mt-4" style={{ borderBottom: "1px solid #e2ecf8" }} />
+              <div
+                className="mt-4"
+                style={{ borderBottom: "1px solid #e2ecf8" }}
+              />
             </div>
           ))}
         </div>
 
         {/* Footer button */}
-        <div className="px-7 py-5 shrink-0" style={{ borderTop: "1px solid #e2ecf8" }}>
+        <div
+          className="px-7 py-5 shrink-0"
+          style={{ borderTop: "1px solid #e2ecf8" }}
+        >
+          {/* Scroll-down hint that disappears once scrolled */}
+          {!hasScrolledToBottom && (
+            <p
+              className="text-xs text-center mb-3 font-medium animate-pulse"
+              style={{ color: "#7D9DC9" }}
+            >
+              ↓ Please scroll down to read the full policy before continuing ↓
+            </p>
+          )}
+
           <button
-            onClick={onClose}
-            className="w-full rounded-xl py-3 text-white font-semibold text-sm transition-all duration-200 hover:brightness-110 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            onClick={handleClose}
+            disabled={!hasScrolledToBottom}
+            className="w-full rounded-xl py-3 font-semibold text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
             style={{
-              background: "linear-gradient(90deg, #2c5aa0 0%, #3a6ec4 100%)",
-              boxShadow: "0 4px 16px rgba(44,90,160,0.30)",
+              background: hasScrolledToBottom
+                ? "linear-gradient(90deg, #2c5aa0 0%, #3a6ec4 100%)"
+                : "linear-gradient(90deg, #94a8c4 0%, #a8b8d0 100%)",
+              boxShadow: hasScrolledToBottom
+                ? "0 4px 16px rgba(44,90,160,0.30)"
+                : "none",
+              color: hasScrolledToBottom ? "#fff" : "#d0d6e0",
+              cursor: hasScrolledToBottom ? "pointer" : "not-allowed",
             }}
           >
-            I Understand
+            {hasScrolledToBottom
+              ? "I Understand"
+              : "Read Full Policy to Continue"}
           </button>
         </div>
       </div>

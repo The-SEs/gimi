@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const sections = [
   {
@@ -92,14 +92,46 @@ interface TermsAndConditionsProps {
 
 export default function TermsAndConditions({ isOpen, onClose }: TermsAndConditionsProps) {
   const [mounted, setMounted] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) setMounted(true);
-    else {
+    if (isOpen) {
+      setMounted(true);
+      setHasScrolledToBottom(false);
+    } else {
       const t = setTimeout(() => setMounted(false), 200);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
+
+  // Check if content is short enough that no scrolling is needed
+  const checkIfAlreadyAtBottom = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollHeight <= el.clientHeight + 2) {
+      setHasScrolledToBottom(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mounted && isOpen) {
+      const t = setTimeout(checkIfAlreadyAtBottom, 50);
+      return () => clearTimeout(t);
+    }
+  }, [mounted, isOpen, checkIfAlreadyAtBottom]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el || hasScrolledToBottom) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+      setHasScrolledToBottom(true);
+    }
+  };
+
+  const handleClose = () => {
+    if (hasScrolledToBottom) onClose();
+  };
 
   if (!mounted) return null;
 
@@ -112,7 +144,7 @@ export default function TermsAndConditions({ isOpen, onClose }: TermsAndConditio
         opacity: isOpen ? 1 : 0,
         transition: "opacity 0.2s",
       }}
-      onClick={onClose}
+      onClick={handleClose}
     >
       {/* Popup card */}
       <div
@@ -126,7 +158,7 @@ export default function TermsAndConditions({ isOpen, onClose }: TermsAndConditio
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-7 pt-7 pb-5 shrink-0"
+          className="flex items-center px-7 pt-7 pb-5 shrink-0"
           style={{ borderBottom: "1px solid #e2ecf8" }}
         >
           <div>
@@ -135,30 +167,14 @@ export default function TermsAndConditions({ isOpen, onClose }: TermsAndConditio
             </p>
             <h2 className="text-xl font-bold text-gray-900">Terms &amp; Conditions</h2>
           </div>
-
-          {/* Close X button */}
-          <button
-            onClick={onClose}
-            className="rounded-xl p-2 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            style={{
-              borderStyle: "solid",
-              borderColor: "#7D9DC9",
-              borderTopWidth: "1px",
-              borderLeftWidth: "1px",
-              borderRightWidth: "1px",
-              borderBottomWidth: "3px",
-              background: "rgba(210,235,255,0.40)",
-              color: "#2c5aa0",
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto px-7 py-5 space-y-5 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="overflow-y-auto px-7 py-5 space-y-5 flex-1"
+        >
           {sections.map((section) => (
             <div key={section.number}>
               {/* Section title row */}
@@ -213,15 +229,32 @@ export default function TermsAndConditions({ isOpen, onClose }: TermsAndConditio
 
         {/* Footer */}
         <div className="px-7 py-5 shrink-0" style={{ borderTop: "1px solid #e2ecf8" }}>
+          {/* Scroll-down hint */}
+          {!hasScrolledToBottom && (
+            <p
+              className="text-xs text-center mb-3 font-medium animate-pulse"
+              style={{ color: "#7D9DC9" }}
+            >
+              ↓ Please scroll down to read all terms before continuing ↓
+            </p>
+          )}
+
           <button
-            onClick={onClose}
-            className="w-full rounded-xl py-3 text-white font-semibold text-sm transition-all duration-200 hover:brightness-110 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+            onClick={handleClose}
+            disabled={!hasScrolledToBottom}
+            className="w-full rounded-xl py-3 font-semibold text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
             style={{
-              background: "linear-gradient(90deg, #2c5aa0 0%, #3a6ec4 100%)",
-              boxShadow: "0 4px 16px rgba(44,90,160,0.30)",
+              background: hasScrolledToBottom
+                ? "linear-gradient(90deg, #2c5aa0 0%, #3a6ec4 100%)"
+                : "linear-gradient(90deg, #94a8c4 0%, #a8b8d0 100%)",
+              boxShadow: hasScrolledToBottom
+                ? "0 4px 16px rgba(44,90,160,0.30)"
+                : "none",
+              color: hasScrolledToBottom ? "#fff" : "#d0d6e0",
+              cursor: hasScrolledToBottom ? "pointer" : "not-allowed",
             }}
           >
-            I Understand
+            {hasScrolledToBottom ? "I Understand" : "Read All Terms to Continue"}
           </button>
         </div>
       </div>
