@@ -6,13 +6,13 @@ Access token -> Authorization: Bearer <token> (short-lived, 15 min)
 Refresh token -> httpOnly cookie "gimi_refresh" (7 days, never readable by JS)
 """
 
-from rest_framework_simplejwt.authentcaiton import JWTAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import AccessToken
-from djang.conf import settings
+from django.conf import settings
 
 
-class CookieJWTAUthentication(JWTAuthentication):
+class CookieJWTAuthentication(JWTAuthentication):
     """
     Extends simplejwt's standard header-based authentication with no extra
     complexity - the access token comes from the Authorization header.
