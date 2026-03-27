@@ -23,6 +23,7 @@ class SafetyModelTests(TestCase):
     def test_create_journal_entry(self):
         """Test to see if journal entry is created"""
         entry = JournalEntry.objects.create(
+            user=self.user,
             content="I had a pretty normal day today",
             is_flagged=False
         )
@@ -60,7 +61,7 @@ class SafetyServiceTests(TestCase):
 
         self.assertTrue(is_dangerous)
         self.assertEqual(phrase, self.risk_phrase.text)
-        self.assertLess(distance, 0.35)
+        self.assertLess(distance, 0.30)  # Changed to 0.30 to match your new services.py threshold
 
 
 class SafetyViewTests(TestCase):
@@ -73,40 +74,43 @@ class SafetyViewTests(TestCase):
         )
 
         self.client.force_authenticate(user=self.user)
-        self.url = reverse('submit_journal')
+        # Pointing to the new consolidated wellness journal endpoint
+        self.url = '/api/wellness/journals/'
 
-    @patch('safety.views.get_llama_response')
-    @patch('safety.views.check_journal')
-    def test_view_handles_high_risk_logic(self, mock_check, mock_llama):
+    # We must patch where the functions are imported/used (wellness.views)
+    @patch('wellness.views._save_mood')
+    @patch('wellness.views.get_llama_response')
+    @patch('wellness.views.check_journal')
+    def test_view_handles_high_risk_logic(self, mock_check, mock_llama, mock_save_mood):
         # Tell mock check_journal to pretend it found a flagged phrase
         mock_check.return_value = (True, "I want to kill myself", 0.01)
 
-        payload = {"content": "I am feeling very dark today."}
+        payload = {"title": "Bad Day", "content": "I am feeling very dark today."}
         response = self.client.post(self.url, payload, format='json')
 
-        # Check API response
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check API response (Changed to 201 CREATED based on your view's return status)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['status'], 'high_risk')
 
         # Verify it saved to the database correctly
         entry = JournalEntry.objects.latest('id')
         self.assertTrue(entry.is_flagged)
 
-        # AI should never be called if it's high risk
+        # AI response should never be called if it's high risk, but mood should be saved
         mock_llama.assert_not_called()
+        mock_save_mood.assert_called_once()
 
-
-    @patch('safety.views.get_llama_response')
-    @patch('safety.views.check_journal')
-    def test_view_handles_safe_logic(self, mock_check, mock_llama):
+    @patch('wellness.views._save_mood')
+    @patch('wellness.views.get_llama_response')
+    @patch('wellness.views.check_journal')
+    def test_view_handles_safe_logic(self, mock_check, mock_llama, mock_save_mood):
         """Test that a safe journal passes through and gets an AI response"""
 
         # Make check_journal pretends it's safe
         mock_check.return_value = (False, "I am okay", 0.8)
-
         mock_llama.return_value = "I am glad that you are feeling well!"
 
-        payload = {"content": "Today, I went to the park."}
+        payload = {"title": "Good Day", "content": "Today, I went to the park."}
         response = self.client.post(self.url, payload, format="json")
 
         # Check API response
@@ -118,8 +122,10 @@ class SafetyViewTests(TestCase):
         self.assertFalse(entry.is_flagged)
         self.assertEqual(entry.ai_chat_response, "I am glad that you are feeling well!")
 
+        # Verify the mood analysis was triggered
+        mock_save_mood.assert_called_once()
+
     def test_empty_content_error(self):
         """Test that sending an empty string returns a 400 Bad Request."""
         response = self.client.post(self.url, {"content": ""}, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
