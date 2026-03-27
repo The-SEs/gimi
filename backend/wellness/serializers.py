@@ -23,6 +23,16 @@ class DailyMoodSerializer(serializers.ModelSerializer):
         fields = ["id", "date", "updated_at", "state"]
         read_only_fields = ["id", "date", "updated_at"]
 
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        instance.refresh_from_db()
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        instnace.refresh_from_db()
+        return instance
+
 
 class VectorDrawingSerializer(serializers.ModelSerializer):
     class Meta:

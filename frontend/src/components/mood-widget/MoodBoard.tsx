@@ -63,7 +63,11 @@ export default function MoodBoard({ className = "" }: MoodBoardProps) {
 
   const applyMoodResponse = (data: DailyMoodResponse) => {
     setCurrent(STATE_TO_MOOD[data.state]);
-    setSaved({ state: data.state, date: data.date, updatedAt: data.updated_at });
+    setSaved({
+      state: data.state,
+      date: data.date,
+      updatedAt: data.updated_at ?? new Date().toISOString(),
+    });
   };
 
   const loadTodayMood = async () => {

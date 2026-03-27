@@ -50,20 +50,20 @@ export default function DailyEntryEditor() {
   const fetchEntries = async () => {
     try {
       const { data } = await api.get<JournalEntryResponse[]>("/api/wellness/journals/");
-      // Sort entries by created_at in descending order (newest first)
+      //sort entries by created_at in descending order
       const sortedEntries = data.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setEntries(sortedEntries);
 
-      // Check if there's an entry for today
+      //check if there is entry today
       const today = new Date().toDateString();
       const todayEntry = sortedEntries.find(entry =>
         new Date(entry.created_at).toDateString() === today
       );
 
       if (todayEntry) {
-        // If there's a today entry, show it in view mode
+        //if there is entry today show it in view mode
         setCurrentIndex(sortedEntries.findIndex(e => e.id === todayEntry.id));
         setTitle(todayEntry.title);
         setBody(todayEntry.content);
@@ -71,7 +71,7 @@ export default function DailyEntryEditor() {
         setEditingEntryId(todayEntry.id);
 
       } else {
-        // If no today entry, show empty form for new entry
+        //if no entry today show empty form for new entry
         setCurrentIndex(-1);
         setTitle("");
         setBody("");
@@ -91,15 +91,14 @@ export default function DailyEntryEditor() {
     let data: JournalEntryResponse;
 
     if (editingEntryId !== null) {
-      // Update existing entry
+      //update existing entry
       ({ data } = await api.patch<JournalEntryResponse>(
         `/api/wellness/journals/${editingEntryId}/`,
         { title: title.trim() || "Untitled Entry", content: body.trim() }
       ));
-      // Replace in list
       setEntries(prev => prev.map(e => e.id === editingEntryId ? data : e));
     } else {
-      // Create new entry
+      //create new entry
       ({ data } = await api.post<JournalEntryResponse>("/api/wellness/journals/", {
         title: title.trim() || "Untitled Entry",
         content: body.trim(),
@@ -160,7 +159,7 @@ export default function DailyEntryEditor() {
     setCurrentIndex(-1);
   };
 
-  // Get current date for display
+  //get current date for display
   const getDisplayDate = () => {
     if (currentIndex >= 0 && entries[currentIndex]) {
       return new Date(entries[currentIndex].created_at).toLocaleDateString(undefined, {
@@ -176,12 +175,12 @@ export default function DailyEntryEditor() {
     });
   };
 
-  // Check if today's entry exists
+  //check if today's entry exists
   const hasTodayEntry = entries.some(entry =>
     new Date(entry.created_at).toDateString() === new Date().toDateString()
   );
 
-  // ── Success state ─────────────────────────────────────────────
+  //success
   if (status === "success" && savedEntry) {
     return (
       <div className="flex justify-center items-start w-full p-8">
@@ -216,13 +215,12 @@ export default function DailyEntryEditor() {
     );
   }
 
-  // ── Main editor ───────────────────────────────────────────────
+  //main editor
   return (
     <div className="flex justify-center items-start w-full p-8">
-      <div className="w-full max-w-[2000px] min-h-[1000px] bg-white/80 backdrop-blur-md rounded-2xl shadow-lg relative">
+      <div className="w-full max-w-[2000px] min-h-[1000px] bg-white/80 backdrop-blur-md rounded-2xl shadow-lg relative flex flex-col">
         <div className="w-full h-4 rounded-t-2xl bg-[#FFC4DB]" />
 
-        {/* Nav controls */}
         <div className="absolute top-6 right-8 flex gap-4 items-center text-xl">
           <button
             onClick={handlePreviousEntry}
@@ -271,8 +269,8 @@ export default function DailyEntryEditor() {
           )}
         </div>
 
-        <div className="p-12 pt-6">
-          {/* Date display */}
+        <div className="p-12 pt-6 flex flex-col flex-1">
+          {/*date*/}
           <div className="mb-4">
             <p className="text-gray-500 text-sm">{getDisplayDate()}</p>
           </div>
@@ -294,12 +292,12 @@ export default function DailyEntryEditor() {
             value={body}
             onChange={(e) => !isViewMode && setBody(e.target.value)}
             disabled={isViewMode}
-            className={`text-gray-700 leading-relaxed w-full min-h-[450px] outline-none resize-none placeholder-gray-400 ${
+            className={`text-gray-700 leading-relaxed w-full flex-1 outline-none resize-none placeholder-gray-400 ${
               isViewMode ? "bg-transparent cursor-default" : ""
             }`}
           />
 
-          {/* Footer with word count and error message */}
+          {/*footer with word count*/}
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-2 text-gray-300 text-xs">
               <svg className="w-3.5 h-3.5 text-pink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
