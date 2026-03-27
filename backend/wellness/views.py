@@ -63,7 +63,7 @@ class JournalListCreateView(generics.ListCreateAPIView):
             return Response({
                 'status': 'high_risk',
                 'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
-                'id': entry.id
+                'id': entry.id,
                 **serializer.data
             }, status=status.HTTP_201_CREATED)
 
@@ -81,7 +81,7 @@ class JournalListCreateView(generics.ListCreateAPIView):
                 'status': 'success',
                 'message': 'Journal saved successfully',
                 'ai_response': ai_reply,
-                'id': entry.id
+                'id': entry.id,
                 **serializer.data
             }, status=status.HTTP_201_CREATED)
 
@@ -176,7 +176,6 @@ def mood_summary(request):
 
 
 # daily Mood (manual log)
-
 class DailyMoodListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = DailyMoodSerializer
@@ -185,11 +184,22 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
         return DailyMood.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-       DailyMood.objects.update_or_create(
-           user=self.request.user,
-           date=timezone.now().date(),
-           defaults={'state': serializer.validated_data['state']}
-       )
+        pass
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        instance, created = DailyMood.objects.update_or_create(
+            user=request.user,
+            date=timezone.now().date(),
+            defaults={"state": serializer.validated_data["state"]},
+        )
+
+        output = DailyMoodSerializer(instance)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(output.data, status=status_code)
+
+
 # vector drawing
 
 class VectorDrawingListCreateView(generics.ListCreateAPIView):

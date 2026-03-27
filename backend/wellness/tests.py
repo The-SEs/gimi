@@ -2,8 +2,17 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from unittest.mock import patch
 
 User = get_user_model()
+
+MOCK_SAFETY_SAFE = (False, None, 1.0)
+MOCK_SAFETY_DANGEROUS = (True, "hurt myself", 0.1)
+MOCK_AI_REPLY = "That sounds like a meaningful experience."
+MOCK_MOOD_RESULT = (
+    {"mood_label": "happy", "confidence": 0.9, "summary": "You seem happy."},
+    {}
+)
 
 
 class BaseTestCase(APITestCase):
@@ -41,6 +50,28 @@ class JournalListCreateTests(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.url = "/api/wellness/journals/"
+        self._start_mocks(safety=MOCK_SAFETY_SAFE)
+
+    def _start_mocks(self, safety=MOCK_SAFETY_SAFE):
+        """Start patches for external calls. Call again to swap safety behavior."""
+        for attr in ("mock_safety", "mock_llama", "mock_mood"):
+            mock = getattr(self, attr, None)
+            if mock:
+                mock.stop()
+
+        patcher_safety = patch("wellness.views.check_journal", return_value=safety)
+        patcher_llama = patch("wellness.views.get_llama_response", return_value=MOCK_AI_REPLY)
+        patcher_mood = patch("wellness.views.analyze_mood", return_value=MOCK_MOOD_RESULT)
+
+        self.mock_safety = patcher_safety.start()
+        self.mock_llama = patcher_llama.start()
+        self.mock_mood = patcher_mood.start()
+
+        self.addCleanup(patcher_safety.stop)
+        self.addCleanup(patcher_llama.stop)
+        self.addCleanup(patcher_mood.stop)
+
+    # --- create ---
 
     def test_create_journal_entry_success(self):
         """An authenticated user can create a journal entry."""
@@ -64,24 +95,42 @@ class JournalListCreateTests(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("content", response.data)
 
+    def test_create_journal_returns_status_and_ai_response(self):
+        """Response body must include status, message, and ai_response for safe entries."""
+        response = self.client.post(self.url, {"content": "Had a great day."})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["status"], "success")
+        self.assertIn("ai_response", response.data)
+        self.assertEqual(response.data["ai_response"], MOCK_AI_REPLY)
+
+    def test_create_flagged_journal_returns_high_risk_status(self):
+        """A dangerous entry must be flagged and return high_risk status."""
+        self._start_mocks(safety=MOCK_SAFETY_DANGEROUS)
+        response = self.client.post(self.url, {"content": "I want to hurt myself."})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["status"], "high_risk")
+        self.assertIn("message", response.data)
+        self.assertTrue(response.data["is_flagged"])
+
+    # --- list ---
+
     def test_list_returns_only_own_journals(self):
         """A user should only see their own journal entries."""
-        # Create one entry for the primary user
         self.client.post(self.url, {"content": "My entry."})
 
-        # Switch to other_user and create an entry
         self._authenticate(self.other_user)
         self.client.post(self.url, {"content": "Other user entry."})
 
-        # Switch back and verify only 1 entry is returned
         self._authenticate(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
+    # --- auth ---
+
     def test_unauthenticated_user_cannot_create_journal(self):
         """Unauthenticated requests must be rejected with 401."""
-        self.client.credentials()  # clear token
+        self.client.credentials()
         response = self.client.post(self.url, {"content": "Should fail."})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -97,16 +146,46 @@ class JournalDetailTests(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.list_url = "/api/wellness/journals/"
-        # Create a journal entry and capture its pk
+
+        patcher_safety = patch("wellness.views.check_journal", return_value=MOCK_SAFETY_SAFE)
+        patcher_llama = patch("wellness.views.get_llama_response", return_value=MOCK_AI_REPLY)
+        patcher_mood = patch("wellness.views.analyze_mood", return_value=MOCK_MOOD_RESULT)
+
+        self.mock_safety = patcher_safety.start()
+        self.mock_llama = patcher_llama.start()
+        self.mock_mood = patcher_mood.start()
+
+        self.addCleanup(patcher_safety.stop)
+        self.addCleanup(patcher_llama.stop)
+        self.addCleanup(patcher_mood.stop)
+
         response = self.client.post(self.list_url, {"title": "Entry 1", "content": "Hello world."})
         self.entry_id = response.data["id"]
         self.detail_url = f"/api/wellness/journals/{self.entry_id}/"
+
+    # --- retrieve ---
 
     def test_retrieve_own_journal_entry(self):
         """A user can fetch one of their own journal entries."""
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.entry_id)
+
+    def test_response_includes_mood_field(self):
+        """Journal detail response must include the mood field."""
+        response = self.client.get(self.detail_url)
+        self.assertIn("mood", response.data)
+
+    def test_mood_field_is_populated_after_create(self):
+        """After creation, the mood field must be non-null with a valid mood_label."""
+        response = self.client.get(self.detail_url)
+        self.assertIsNotNone(response.data["mood"])
+        self.assertIn(response.data["mood"]["mood_label"], [
+            "happy", "sad", "anxious", "calm",
+            "angry", "neutral", "excited", "stressed",
+        ])
+
+    # --- update ---
 
     def test_update_own_journal_entry(self):
         """A user can update their own journal entry (PUT)."""
@@ -115,20 +194,49 @@ class JournalDetailTests(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "Updated Title")
 
+    def test_put_requires_content(self):
+        """PUT without content must return 400."""
+        response = self.client.put(self.detail_url, {"title": "No content here"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("content", response.data)
+
     def test_partial_update_own_journal_entry(self):
         """A user can partially update their own journal entry (PATCH)."""
         response = self.client.patch(self.detail_url, {"title": "Patched Title"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "Patched Title")
 
+    def test_update_returns_status_and_ai_response(self):
+        """Update response body must include status and ai_response for safe entries."""
+        response = self.client.put(
+            self.detail_url,
+            {"title": "Updated", "content": "Updated content."}
+        )
+        self.assertEqual(response.data["status"], "success")
+        self.assertIn("ai_response", response.data)
+
+    def test_update_flagged_entry_returns_high_risk(self):
+        """Updating with dangerous content must return high_risk status."""
+        with patch("wellness.views.check_journal", return_value=MOCK_SAFETY_DANGEROUS):
+            response = self.client.put(
+                self.detail_url,
+                {"title": "Dark", "content": "I want to hurt myself."}
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "high_risk")
+        self.assertTrue(response.data["is_flagged"])
+
+    # --- delete ---
+
     def test_delete_own_journal_entry(self):
         """A user can delete their own journal entry."""
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        # Confirm it's gone
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # --- ownership ---
 
     def test_cannot_access_other_users_journal_entry(self):
         """A user must not be able to retrieve another user's journal entry."""
@@ -136,16 +244,17 @@ class JournalDetailTests(BaseTestCase):
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_cannot_update_other_users_journal_entry(self):
+        """A user must not be able to update another user's journal entry."""
+        self._authenticate(self.other_user)
+        response = self.client.put(self.detail_url, {"title": "X", "content": "X"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_cannot_delete_other_users_journal_entry(self):
         """A user must not be able to delete another user's journal entry."""
         self._authenticate(self.other_user)
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_response_includes_mood_field(self):
-        """Journal detail response must include the mood field (null if not yet analyzed)."""
-        response = self.client.get(self.detail_url)
-        self.assertIn("mood", response.data)
 
 
 # ---------------------------------------------------------------------------
@@ -158,8 +267,10 @@ class DailyMoodListCreateTests(BaseTestCase):
         super().setUp()
         self.url = "/api/wellness/daily-moods/"
 
+    # --- create ---
+
     def test_create_daily_mood_success(self):
-        """An authenticated user can log a mood for today."""
+        """First mood log of the day returns 201."""
         response = self.client.post(self.url, {"state": "HP"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["state"], "HP")
@@ -168,7 +279,6 @@ class DailyMoodListCreateTests(BaseTestCase):
         """All four mood states should be accepted."""
         valid_states = ["HP", "SD", "AN", "CM"]
         for i, state in enumerate(valid_states):
-            # Each test user gets a fresh user so the unique_together constraint doesn't fire
             user = User.objects.create_user(
                 username=f"user_{i}",
                 email=f"user{i}@iacademy.edu.ph",
@@ -194,21 +304,38 @@ class DailyMoodListCreateTests(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("state", response.data)
 
-    def test_cannot_log_mood_twice_on_same_day(self):
-        """The unique_together constraint must prevent duplicate entries per day."""
+    # --- same-day update behavior ---
+
+    def test_first_mood_of_day_returns_201(self):
+        """First POST of the day must return 201."""
+        response = self.client.post(self.url, {"state": "CM"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_mood_same_day_returns_200(self):
+        """Second POST on the same day must update the record and return 200."""
         self.client.post(self.url, {"state": "HP"})
         response = self.client.post(self.url, {"state": "SD"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["state"], "SD")
+
+    def test_update_mood_same_day_only_one_record_exists(self):
+        """After multiple same-day POSTs, only one record should exist for that user."""
+        self.client.post(self.url, {"state": "HP"})
+        self.client.post(self.url, {"state": "SD"})
+        self.client.post(self.url, {"state": "CM"})
+        response = self.client.get(self.url)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["state"], "CM")
+
+    # --- list ---
 
     def test_list_daily_moods_returns_own_entries_only(self):
         """A user should only see their own daily mood entries."""
         self.client.post(self.url, {"state": "CM"})
 
-        # other_user logs their own mood
         self._authenticate(self.other_user)
         self.client.post(self.url, {"state": "AN"})
 
-        # Back to primary user — should see only 1 record
         self._authenticate(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -221,6 +348,8 @@ class DailyMoodListCreateTests(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         today = timezone.now().date().isoformat()
         self.assertEqual(response.data["date"], today)
+
+    # --- auth ---
 
     def test_unauthenticated_user_cannot_log_mood(self):
         """Unauthenticated requests must be rejected with 401."""
