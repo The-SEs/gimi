@@ -24,5 +24,8 @@ class DailyMoodSerializer(serializers.ModelSerializer):
 class VectorDrawingSerializer(serializers.ModelSerializer):
     class Meta:
         model = VectorDrawing
-        fields = ["id", "title", "canvas_data", "created_at", "updated_at"]
+        fields = ["id", "title", "canvas_data", "image_b64", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
+        extra_kwargs = {
+            "image_b64" : {"write_only": True},
+        }

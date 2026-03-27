@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from pgvector.django import VectorField
 
 class DailyMood(models.Model):
     #manual daily mood log once a day
@@ -80,8 +80,11 @@ class VectorDrawing(models.Model):
     )
     title = models.CharField(max_length=255, blank=True)
     canvas_data = models.JSONField(default=dict)
+    image_b64 = models.TextField(blank=True)
+    embedding = VectorField(dimensions=512, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         ordering = ["-created_at"]

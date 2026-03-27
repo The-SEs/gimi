@@ -209,8 +209,11 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         return VectorDrawing.objects.filter(user=self.request.user)
 
+    #Adding extra stuff for drawing embeddings
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        image_b64 = serializer.validated_data.get("image_b64","")
+        embedding = embed_drawing(image_b64) if image_b64 else None
+        serializer.save(user=self.request.user, embedding=embedding)
 
 
 class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -219,3 +222,10 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return VectorDrawing.objects.filter(user=self.request.user)
+    
+    def perform_update(self, serializer):
+        image_b64 = serializer.validated_data.get("image_b64", "")
+        embedding = embed_drawing(image_b64) if image_b64 else None
+        serializer.save(embedding=embedding)
+
+
