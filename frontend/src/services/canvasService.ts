@@ -1,9 +1,11 @@
 import { api } from './api';
 
+
 interface DrawingData {
   id?: number;
   title: string;
   canvas_data?: unknown;
+  image_b64?: String;
 }
 
 interface Drawing extends DrawingData {
@@ -13,20 +15,23 @@ interface Drawing extends DrawingData {
 }
 
 export const canvasService = {
-  saveDrawing: async (title: string, canvasData: unknown, drawingId?: number): Promise<Drawing> => {
+   saveDrawing: async (
+    title: string,
+    canvasData: unknown,
+    imageB64: string,       
+    drawingId?: number
+  ): Promise<Drawing> => {
+    const payload = {
+      title,
+      canvas_data: canvasData,
+      image_b64: imageB64,   
+    };
+
     if (drawingId) {
-      // Update existing drawing
-      const { data } = await api.put<Drawing>(`/api/wellness/drawings/${drawingId}/`, {
-        title,
-        canvas_data: canvasData,
-      });
+      const { data } = await api.put<Drawing>(`/api/wellness/drawings/${drawingId}/`, payload);
       return data;
     } else {
-      // Create new drawing
-      const { data } = await api.post<Drawing>('/api/wellness/drawings/', {
-        title,
-        canvas_data: canvasData,
-      });
+      const { data } = await api.post<Drawing>('/api/wellness/drawings/', payload);
       return data;
     }
   },
@@ -44,7 +49,6 @@ export const canvasService = {
   },
 
   // Delete a drawing
-  
   deleteDrawing: async (id: number): Promise<void> => {
     await api.delete(`/api/wellness/drawings/${id}/`);
   },

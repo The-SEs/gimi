@@ -38,6 +38,7 @@ numpy==2.4.3
 oauthlib==3.3.1
 packaging==26.0
 pgvector==0.4.2
+Pillow==12.1.1
 propcache==0.4.1
 psycopg==3.3.3
 psycopg-binary==3.3.3

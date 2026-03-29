@@ -3,6 +3,12 @@ import { canvasService } from '../../services/canvasService';
 
 // Types 
 interface StrokeObj {
+  y: number;
+  x: number;
+  text: string;
+  font: any;
+  bold: any;
+  italic: any;
   id: number; type: 'stroke';
   color: string; opacity: number; lineWidth: number;
   points: number[]; dx: number; dy: number;
@@ -308,6 +314,7 @@ export default function SketchbookCanvas() {
     }
   }, [objects, selectedIds, tool]);
 
+  
   //  Save drawing to backend 
   const serializeCanvasData = useCallback(() => {
     // Strip non-serializable HTMLImageElement
@@ -320,6 +327,7 @@ export default function SketchbookCanvas() {
     });
   }, [objects]);
 
+
   const handleSaveDrawing = async (title: string) => {
     if (!title.trim()) {
       setSaveError('Title cannot be empty');
@@ -330,11 +338,51 @@ export default function SketchbookCanvas() {
       setIsSaving(true);
       setSaveError(null);
 
-      const canvasData = serializeCanvasData();
-      const result = await canvasService.saveDrawing(title, canvasData, drawingId || undefined);
+      const canvas = canvasRef.current;
+      let imageB64 = '';
 
-      // Validate response structure
-      if (!result || typeof result.id !== 'number') {
+      if(canvas) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        if(tempCtx) {
+          tempCtx.fillStyle = '#ffffff';
+          tempCtx.fillRect(0,0,tempCanvas.width, tempCanvas.height);
+
+          objects.forEach(obj => {
+            tempCtx.save();
+            tempCtx.translate(obj.dx, obj.dy);
+
+            if(obj.type === 'stroke') {
+              const { r, g, b } = hexToRgb(obj.color);
+              tempCtx.fillStyle = `rgba(${r}, ${g}, ${b}, ${obj.opacity})`;
+              tempCtx.font =`${obj.italic ? 'italic': ''}${obj.bold ? 'bold' : ''}{obj.fontSize}px ${obj.font}`;
+              tempCtx.fillText(obj.text, obj.x, obj.y);
+            } else if (obj.type === 'image') {
+              tempCtx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
+            }
+
+
+            tempCtx.restore();
+          });
+
+
+          imageB64 = tempCanvas.toDataURL('image/png');
+        }
+      }
+
+      const canvasData = serializeCanvasData();
+      const result = await canvasService.saveDrawing(
+        title,
+        canvasData,
+        imageB64,
+        drawingId || undefined
+      );
+
+
+      if(!result || typeof result.id !== 'number') {
         throw new Error('Invalid response from server');
       }
 
@@ -364,6 +412,7 @@ export default function SketchbookCanvas() {
     }
   };
 
+
   function getObjBounds(obj: CanvasObj): Bounds | null {
     const dx=obj.dx, dy=obj.dy;
     if (obj.type==='stroke') {
@@ -386,6 +435,7 @@ export default function SketchbookCanvas() {
     return null;
   }
 
+
   // History 
   const saveSnapshot = useCallback((objs: CanvasObj[]) => {
     // Strip non-serialisable HTMLImageElement before JSON
@@ -398,6 +448,7 @@ export default function SketchbookCanvas() {
     setCanRedo(false);
   }, []);
 
+
   function restoreImageObj(o: CanvasObj): CanvasObj {
     if (o.type === 'image' && o._src) {
       const img = new Image();
@@ -406,6 +457,7 @@ export default function SketchbookCanvas() {
     }
     return o;
   }
+
 
   const undo = () => {
     if (historyRef.current.length <= 1) return;
@@ -418,6 +470,7 @@ export default function SketchbookCanvas() {
     setCanRedo(true);
   };
 
+
   const redo = () => {
     if (!redoStackRef.current.length) return;
     const next = redoStackRef.current.pop()!;
@@ -429,6 +482,7 @@ export default function SketchbookCanvas() {
     setCanRedo(redoStackRef.current.length > 0);
   };
 
+
   const clearCanvas = () => {
     setObjects([]);
     setSelectedIds(new Set());
@@ -438,6 +492,7 @@ export default function SketchbookCanvas() {
     setCanUndo(false);
     setCanRedo(false);
   };
+
 
   const handleDownloadDrawing = useCallback(() => {
   const canvas = canvasRef.current;
@@ -516,6 +571,7 @@ export default function SketchbookCanvas() {
   }
 }, [objects, today]);
 
+
   //  Canvas coordinate helper 
   const getPos = (e: React.MouseEvent | React.TouchEvent): Pos => {
     const canvas = canvasRef.current!;
@@ -529,6 +585,7 @@ export default function SketchbookCanvas() {
     };
   };
 
+
   // Hit test 
   function hitTest(x: number, y: number): number | null {
     for (let i = objects.length-1; i >= 0; i--) {
@@ -537,6 +594,7 @@ export default function SketchbookCanvas() {
     }
     return null;
   }
+
 
   // Pointer down 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
@@ -578,17 +636,24 @@ export default function SketchbookCanvas() {
     isDrawing.current = true;
     const alpha = opacity / 100;
     const stroke: StrokeObj = {
-      id:        Date.now(),
-      type:      'stroke',
+      id: Date.now(),
+      type: 'stroke',
       color,
-      opacity:   tool==='brush' ? alpha*0.4 : alpha,
-      lineWidth: tool==='brush' ? thickness*3 : thickness,
-      points:    [pos.x, pos.y],
+      opacity: tool === 'brush' ? alpha * 0.4 : alpha,
+      lineWidth: tool === 'brush' ? thickness * 3 : thickness,
+      points: [pos.x, pos.y],
       dx: 0, dy: 0,
+      y: 0,
+      x: 0,
+      text: '',
+      font: undefined,
+      bold: undefined,
+      italic: undefined
     };
     currentStroke.current = stroke;
     setObjects(prev => [...prev, stroke]);
   };
+
 
   // Pointer move 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -635,6 +700,7 @@ export default function SketchbookCanvas() {
     setObjects(prev => prev.map(o => o.id === updated.id ? updated : o));
   };
 
+
   // Pointer up 
   const handleMouseUp = (e?: React.MouseEvent | React.TouchEvent) => {
     const ss = selectState.current;
@@ -667,6 +733,7 @@ export default function SketchbookCanvas() {
     setObjects(prev => { saveSnapshot(prev); return prev; });
   };
 
+
   // Eraser 
   function eraseAt(x: number, y: number) {
     setObjects(prev => prev.filter(obj => {
@@ -674,6 +741,7 @@ export default function SketchbookCanvas() {
       return !(b && ptInRect(x,y,b.x,b.y,b.w,b.h,thickness*2));
     }));
   }
+
 
   // Delete key 
   useEffect(() => {
@@ -694,6 +762,7 @@ export default function SketchbookCanvas() {
     return () => window.removeEventListener('keydown', onKey);
   }, [tool, selectedIds, saveSnapshot]);
 
+
   // Text placement 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (tool === 'text' && placingText.current) {
@@ -711,6 +780,7 @@ export default function SketchbookCanvas() {
       setTool('pen');
     }
   };
+
 
   // Image import 
   const handleImageImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -736,6 +806,7 @@ export default function SketchbookCanvas() {
     e.target.value = '';
   };
 
+
   // Cursor 
   const getCursor = (): string => {
     if (tool==='eraser') return 'cell';
@@ -745,10 +816,12 @@ export default function SketchbookCanvas() {
     return 'crosshair';
   };
 
+
   const sliders = [
     { label:'Size',    min:1,  max:40,  value:thickness, set:setThickness, display:String(thickness) },
     { label:'Opacity', min:5,  max:100, value:opacity,   set:setOpacity,   display:`${opacity}%` },
   ];
+
 
   // Render 
   return (
