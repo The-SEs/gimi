@@ -7,7 +7,7 @@ export default function AdminLayout() {
   const isSecurityRoute = location.pathname === "/admin/security"
 
   return (
-    <div className="min-h-screen min-w-screen flex flex-col font-sans text-gray-900 bg-[#f5f6f8]">
+    <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-[#f5f6f8] overflow-x-hidden">
       <header
         className={`flex flex-row flex-wrap items-center justify-between gap-5 bg-white ${
           isSecurityRoute
