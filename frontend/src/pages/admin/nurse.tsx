@@ -4,6 +4,7 @@ import AlertGuidance from "../../components/admin-nurse-widget/alertGuidance.tsx
 import StudentInfo from "../../components/admin-nurse-widget/studentInfo.tsx";
 import ActiveConditions from "../../components/admin-nurse-widget/activeConditions";
 import CurrentMedications from "../../components/admin-nurse-widget/currentMedications";
+import HospitalizationTreatmentHistory from "../../components/admin-nurse-widget/hospitalizationTreatmentHistory";
 
 const W = ({ style, className = "" }: { style?: React.CSSProperties; className?: string }) => (
   <div
@@ -13,42 +14,42 @@ const W = ({ style, className = "" }: { style?: React.CSSProperties; className?:
 
 export default function NurseAdminPage() {
   return (
-    <div className="w-full box-border">
+    <div className="w-full box-border overflow-x-hidden">
 
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 mb-4 lg:mb-6">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 mb-4 lg:mb-6">
 
-    <div className="w-full lg:flex-1 min-w-0 overflow-hidden">
-      <StudentInfo />
-    </div>
+        <div className="w-full lg:flex-1 min-w-0 overflow-hidden">
+          <StudentInfo />
+        </div>
 
-    <div className="w-full lg:w-[35%] lg:flex-shrink-0 flex flex-col items-center justify-center gap-4">
-      <div className="w-[260px] max-w-full">
-        <ContactSecurity />
+        <div className="w-full lg:w-[35%] lg:flex-shrink-0 flex flex-row lg:flex-col items-center justify-center gap-4">
+          <div className="w-full max-w-[260px]">
+            <ContactSecurity />
+          </div>
+          <div className="w-full max-w-[260px]">
+            <AlertGuidance />
+          </div>
+        </div>
       </div>
-      <div className="w-[260px] max-w-full">
-        <AlertGuidance />
-      </div>
-    </div>
-    </div>
-    
+
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start">
         <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-4 lg:gap-6">
           <div className="flex flex-col sm:flex-row gap-4 lg:gap-6">
-              <div className="h-80 lg:h-[380px] sm:flex-[0_0_58%]">
-                <ActiveConditions />
-              </div>
-
-              <div className="h-80 lg:h-[380px] sm:flex-1">
-                <CurrentMedications />
-              </div>
-            </div>
-            <W className="h-64 lg:h-[288px]" />
+            <div className="w-full sm:flex-[0_0_58%] min-h-[320px] lg:h-[380px]">
+              <ActiveConditions />
             </div>
 
-            <div className="w-full lg:w-[35%] lg:flex-shrink-0 flex flex-col gap-4 lg:gap-6">
-            <W className="min-h-[400px] lg:min-h-[520px]" />
-            <W className="h-48 lg:h-[208px]" />
+            <div className="w-full sm:flex-1 min-h-[320px] lg:h-[380px]">
+              <CurrentMedications />
+            </div>
           </div>
+          <W className="h-64 lg:h-[288px]" />
+        </div>
+
+        <div className="w-full lg:w-[35%] lg:flex-shrink-0 flex flex-col gap-4 lg:gap-6">
+          <HospitalizationTreatmentHistory />
+          <W className="h-48 lg:h-[208px]" />
+        </div>
       </div>
     </div>
   );

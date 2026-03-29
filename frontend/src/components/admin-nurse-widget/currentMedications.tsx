@@ -23,11 +23,11 @@ export default function CurrentMedications() {
             src={blueMedicineIcon}
             alt="Medication"
             className="w-10 h-10"/>
-          <div>
-            <p className="text-xl font-semibold text-gray-800">
+          <div className="min-w-0">
+            <p className="text-xl font-semibold text-gray-800 break-all">
               Propranolol
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 break-all">
               10MG • ONCE DAILY
             </p>
           </div>
@@ -37,11 +37,11 @@ export default function CurrentMedications() {
             src={greyMedicineIcon}
             alt="Medication"
             className="w-10 h-10"/>
-          <div>
-            <p className="text-xl font-semibold text-gray-800">
+          <div className="min-w-0">
+            <p className="text-xl font-semibold text-gray-800 break-all">
               Propranolol
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 break-all">
               20MG • AS NEEDED
             </p>
           </div>
