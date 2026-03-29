@@ -1,13 +1,13 @@
 // Pure API functions
 // AuthContext calls these and manages state around them
 
-import { api } from "./api";
+import { api } from "./api"
 import type {
   LoginCredentials,
   RegisterCredentials,
   AuthResponse,
   TokenRefreshResponse,
-} from "../types/auth";
+} from "../types/auth"
 
 // const BASE_URL = ... (removed)
 
@@ -18,12 +18,12 @@ export const authService = {
    */
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const payload = {
-      username: credentials.username,
+      email: credentials.username,
       password: credentials.password,
-    };
+    }
 
-    const response = await api.post<AuthResponse>("/api/auth/login/", payload);
-    return response.data;
+    const response = await api.post<AuthResponse>("/api/auth/login/", payload)
+    return response.data
   },
 
   /**
@@ -36,13 +36,13 @@ export const authService = {
       email: credentials.email,
       password1: credentials.password,
       password2: credentials.password_confirm,
-    };
+    }
 
     const response = await api.post<AuthResponse>(
       "/api/auth/registration/",
       payload,
-    );
-    return response.data;
+    )
+    return response.data
   },
 
   /**
@@ -54,10 +54,10 @@ export const authService = {
     try {
       const res = await api.post<TokenRefreshResponse>(
         "/api/auth/token/refresh/",
-      );
-      return res.data;
+      )
+      return res.data
     } catch {
-      return null; // Cookie missing or expired
+      return null // Cookie missing or expired
     }
   },
 
@@ -66,7 +66,7 @@ export const authService = {
    * Frontend should also clear in-memory access token.
    */
   logout(): Promise<void> {
-    return api.post("/api/auth/logout/").then(() => undefined);
+    return api.post("/api/auth/logout/").then(() => undefined)
   },
 
   /**
@@ -77,7 +77,7 @@ export const authService = {
   loginWithGoogle: async (accessToken: string): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>("/api/users/google/", {
       access_token: accessToken,
-    });
-    return response.data;
+    })
+    return response.data
   },
-};
+}
