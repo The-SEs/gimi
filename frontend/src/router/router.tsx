@@ -11,6 +11,10 @@ import OnboardingQuestions from "../pages/onboarding/onboarding_questions.tsx";
 import ChatTestPage from "../pages/chat/chatTest.tsx"; // ONLY FOR TESTING
 import JournalPage from "../pages/journal/journal.tsx";
 import CanvasPage from "../pages/canvas/canvas.tsx";
+import NurseAdminPage from "../pages/admin/nurse.tsx";
+import SecurityAdminPage from "../pages/admin/security.tsx";
+import AdminLayout from "../layout/adminLayout.tsx";
+import AdminDashboard from "../pages/admin/dashboard.tsx";
 
 const RegisterWrapper = () => {
   const navigate = useNavigate();
@@ -26,7 +30,6 @@ export const router = createBrowserRouter([
     path: "/dashboard",
     element: <MainLayout />,
     children: [{ path: "/dashboard", element: <DashboardPage /> }],
-    
   },
   {
     path: "/journal",
@@ -54,5 +57,14 @@ export const router = createBrowserRouter([
   {
     path: "/chat",
     element: <ChatTestPage />,
+  },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { path: "/admin/dashboard", element: <AdminDashboard /> },
+      { path: "/admin/security", element: <SecurityAdminPage /> },
+      { path: "/admin/nurse", element: <NurseAdminPage /> },
+    ],
   },
 ]);
