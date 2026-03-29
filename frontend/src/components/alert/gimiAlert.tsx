@@ -1,13 +1,21 @@
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline"
 
-import AlertIcon from "../../assets/alertIcon.svg";
+import AlertIcon from "../../assets/alertIcon.svg"
+import type { ReactNode } from "react"
 
 type GimiAlertProps = {
-  onClose?: () => void;
-  className?: string;
-};
+  title?: string
+  message?: string
+  actionNode?: ReactNode
+  onAction?: () => void
+  onClose?: () => void
+  className?: string
+}
 
 export default function GimiAlert({
+  title = "GIMI",
+  message = "Wow, that's a lot of words. Are you okay? Do you need help?",
+  actionNode,
   onClose,
   className = "",
 }: GimiAlertProps) {
@@ -35,13 +43,15 @@ export default function GimiAlert({
 
         <div className="pr-6">
           <p className="text-2xl font-bold tracking-wide text-[#5b63d4]">
-            GIMI
+            {title}
           </p>
-          <p className="mt-1 text-sm leading-5 text-slate-700/80">
-            Wow, that&apos;s a lot of words. Are you okay? Do you need help?
-          </p>
+          <p className="mt-1 text-sm leading-5 text-slate-700/80">{message}</p>
+
+          {actionNode && (
+            <div className="mt-5 flex w-full justify-center">{actionNode}</div>
+          )}
         </div>
       </div>
     </div>
-  );
+  )
 }
