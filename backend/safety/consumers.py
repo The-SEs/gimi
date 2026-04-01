@@ -3,6 +3,11 @@ import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async  # <-- 1. Import this tool
 from safety.services import check_journal  # <-- 2. Import your safety logic
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+BASE_URL = os.getenv("OLLAMA_BASE_URL")
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -31,7 +36,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # -----------------------
 
             # 5. IF SAFE, PROCEED WITH OLLAMA STREAMING
-            url = "http://100.93.60.3:11434/api/generate"
+            url = f"{BASE_URL}/api/generate"
             payload = {"model": "llama3.2", "prompt": user_message, "stream": True}
 
             try:
