@@ -152,7 +152,7 @@ export default function ConsentPage() {
 
   const handleProceed = () => {
     if (!allChecked) return;
-    navigate("/onboarding-questions");
+    navigate("/login");
   };
 
   const privacyItems: ToggleItem[] = [
