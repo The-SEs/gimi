@@ -37,7 +37,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
         password: password,
         password_confirm: confirmPassword,
       });
-      navigate("/onboarding-questions");
+      navigate("/disclaimers");
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
         setErrors(err.response.data as ApiError);

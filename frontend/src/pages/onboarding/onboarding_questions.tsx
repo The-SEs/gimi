@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import GimiIcon from "../../assets/GIMI_Icon.svg";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -327,6 +328,7 @@ export default function OnboardingQuestions() {
     }
   };
 
+  const navigate = useNavigate();
   const isLastSlide = slideIndex === totalSlides - 1;
 
   return (
@@ -391,7 +393,7 @@ export default function OnboardingQuestions() {
 
               {/* Next / Finish button */}
               <button
-                onClick={isLastSlide ? () => console.log("Finish!", answers) : next}
+                onClick={isLastSlide ? () => navigate("/dashboard") : next}
                 disabled={!canProceed()}
                 className={`${slideIndex > 0 ? "w-1/2" : "w-full"} rounded-xl py-3.5 text-white font-semibold text-base sm:text-lg transition-all duration-200 hover:brightness-110 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed`}
                 style={{
