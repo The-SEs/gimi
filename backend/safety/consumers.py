@@ -5,6 +5,7 @@ from asgiref.sync import sync_to_async  # <-- 1. Import this tool
 from safety.services import check_journal  # <-- 2. Import your safety logic
 import os
 from dotenv import load_dotenv
+from safety.models import SafetyFlag
 
 load_dotenv()
 BASE_URL = os.getenv("OLLAMA_BASE_URL")
@@ -20,19 +21,35 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             # --- THE INTERCEPTOR ---
             # 3. Safely run the synchronous DB check inside this async environment
+            # --- THE INTERCEPTOR ---
             is_dangerous, matched_phrase, distance = await sync_to_async(check_journal)(user_message)
 
             if is_dangerous:
-                # 4. If dangerous, send the safety message and STOP.
+                # 1. Safely attempt to save to the database without crashing the chat
+                try:
+                    user = self.scope.get("user")
+                    if user and user.is_authenticated:
+                        await sync_to_async(SafetyFlag.objects.create)(
+                            user=user,
+                            flagged_text=user_message,
+                            matched_phrases=[matched_phrase] if matched_phrase else [],
+                            risk_level='High'
+                        )
+                    else:
+                        print("WARNING: High risk detected, but WebSocket user is not authenticated.")
+                except Exception as e:
+                    print(f"Error saving SafetyFlag: {e}")
+
+                # 2. Send warning to frontend (This will now ALWAYS trigger!)
                 warning_message = "We noticed you might be going through a tough time. Would you like to schedule a talk with the school counselor?"
 
                 await self.send(text_data=json.dumps({
                     "message": warning_message,
                     "done": True,
-                    "is_flagged": True  # You can use this flag in React to turn the message red!
+                    "status": "high_risk"
                 }))
 
-                return  # <-- CRITICAL: Exit the function so Ollama is never called
+                return
             # -----------------------
 
             # 5. IF SAFE, PROCEED WITH OLLAMA STREAMING
