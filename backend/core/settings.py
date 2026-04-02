@@ -224,3 +224,11 @@ STATIC_URL = "static/"
 
 # url to spyke's machine para ai and dapat tailscalers
 LLM_BASE_URL = "http:100.100.111.14/v1/chat/completions"
+
+# allow cookies to be sent cross-origin in development
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+JWT_AUTH_SAMESITE = 'Lax'
+
+# Make sure this is False for local development (HTTP)
+JWT_AUTH_SECURE = False
