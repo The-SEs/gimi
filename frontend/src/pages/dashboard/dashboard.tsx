@@ -14,13 +14,15 @@ export default function DashboardPage() {
   const { user } = useAuth();
   return (
     <div className="mx-auto">
-      <div className="sticky z-100 bottom-5 right-5">
+      <div className="sticky z-100 bottom-5 right-5 sm:invisible md:visible lg:visible">
         <GimiHeadIcon />
       </div>
       <div className="grid grid-cols-2 gap-x-10 mx-auto lg:flex">
-        <WelcomeWidget className="col-span-2" name={user?.username || "Student"} />
+        <WelcomeWidget
+          className="col-span-2"
+          name={user?.username || "Student"}
+        />
         <MoodBoard />
-        
       </div>
       <div className="flex">
         <div className="mx-6 grid grid-cols-3 gap-x-10 flex-1 lg:flex mb-10">
