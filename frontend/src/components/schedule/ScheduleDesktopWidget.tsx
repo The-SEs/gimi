@@ -103,38 +103,31 @@ const ScheduleDesktopWidget: React.FC = () => {
   const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
-    <div className="relative w-full max-w-[75%] mx-auto bg-[#f0f7ff] p-6 md:p-12 rounded-[40px] shadow-2xl font-sans min-h-[700px]">
-      {/* 1. Header Row */}
+    <div className="relative w-full bg-[#f0f7ff] p-6 md:p-12 rounded-[40px] shadow-2xl font-varela min-h-[700px]">
+      {/* Header */}
       <div className="flex justify-between items-center mb-12">
         <h2
-          className="text-[#2d5a9e] text-4xl font-bold tracking-tight"
+          className="text-GIMI-blue text-4xl font-bold tracking-tight"
           style={{ fontFamily: '"Gloria Hallelujah", cursive' }}
         >
           Our Schedule
         </h2>
-        <span className="text-[#4b8df2] text-xl font-medium">
+        <span className="text-blue-400 text-xl font-medium">
           {selectedFullDate}
         </span>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
-        {/* 2. Left Panel: Calendar */}
+        {/* Calendar */}
         <div className="flex-1">
-          {/* Calendar Header */}
           <div className="flex justify-between items-center mb-8 px-2">
-            <h3
-              className="text-[#2d5a9e] text-xl font-bold"
-              style={{
-                fontFamily:
-                  '"Liberation Serif", Tinos, "Times New Roman", serif',
-              }}
-            >
+            <h3 className="text-GIMI-blue text-xl font-bold">
               {monthName} {viewYear}
             </h3>
             <div className="flex space-x-4">
               <button
                 onClick={handlePrevMonth}
-                className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200"
+                className="text-blue-400 hover:bg-blue-100 p-1 rounded-md transition duration-200"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -153,7 +146,7 @@ const ScheduleDesktopWidget: React.FC = () => {
               </button>
               <button
                 onClick={handleNextMonth}
-                className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200"
+                className="text-blue-400 hover:bg-blue-100 p-1 rounded-md transition duration-200"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -173,46 +166,40 @@ const ScheduleDesktopWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* Days Label Header */}
           <div className="grid grid-cols-7 mb-4">
             {dayLabels.map((l, i) => (
               <div
                 key={i}
-                className="text-center text-[#9db7e0] font-bold text-sm"
+                className="text-center text-blue-300 font-bold text-sm"
               >
                 {l}
               </div>
             ))}
           </div>
 
-          {/* Date Grid */}
           <div className="grid grid-cols-7 gap-y-2">
             {calendarData.map(({ date, isCurrentMonth }) => {
               const isSelectedVal = isSameDate(date, selectedDate);
               const isTodayVal = isToday(date);
-
               return (
                 <button
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
                   className={`relative h-14 md:h-16 flex items-center justify-center transition-all duration-200
-                    ${isCurrentMonth ? "text-[#2d5a9e]" : "text-[#c0d4ed]"}
-                    ${isSelectedVal ? "z-10" : "hover:scale-105"}
-                  `}
+                    ${isCurrentMonth ? "text-GIMI-blue" : "text-blue-200"}
+                    ${isSelectedVal ? "z-10" : "hover:scale-105"}`}
                 >
-                  {/* Selected Highlight (Blue Square with dot) */}
                   {isSelectedVal && (
-                    <div className="absolute inset-0 bg-[#4b8df2] rounded-2xl shadow-lg ring-4 ring-white/10 flex flex-col items-center justify-center">
+                    <div className="absolute inset-0 bg-blue-400 rounded-2xl shadow-lg ring-4 ring-white/10 flex flex-col items-center justify-center">
                       <span className="text-white text-lg font-bold">
                         {date.getDate()}
                       </span>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full mt-1"></div>
+                      <div className="w-1.5 h-1.5 bg-white rounded-full mt-1" />
                     </div>
                   )}
-
                   {!isSelectedVal && (
                     <span
-                      className={`text-lg font-semibold ${isTodayVal ? "text-[#4b8df2]" : ""}`}
+                      className={`text-lg font-semibold ${isTodayVal ? "text-blue-400" : ""}`}
                     >
                       {date.getDate()}
                     </span>
@@ -223,18 +210,12 @@ const ScheduleDesktopWidget: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Right Panel: Today's Notes */}
+        {/* Today's Notes */}
         <div className="w-full lg:w-[420px]">
-          <h3
-            className="text-[#2d5a9e] text-3xl font-bold mb-4"
-            style={{
-              fontFamily: '"Liberation Serif", Tinos, "Times New Roman", serif',
-            }}
-          >
+          <h3 className="text-GIMI-blue text-3xl font-bold mb-4">
             Today's Notes
           </h3>
           <div className="w-full h-[1px] bg-blue-100 mb-8" />
-
           <div className="space-y-8">
             <EventCard
               time="10:00 AM"
@@ -252,20 +233,17 @@ const ScheduleDesktopWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Bottom Section: Sticky Note */}
+      {/* Sticky Notes */}
       <div className="mt-16 space-y-8">
         {notes.map((note, index) => (
           <div key={index} className="relative">
-            {/* Decorative Tape on dashed box (Only for the first or all? I'll do all for consistency with "looks the same") */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-[#d0e6ff] opacity-80 z-20 shadow-sm rounded-sm" />
-
-            <div className="w-full border-2 border-dashed border-[#c0d4ed] rounded-[32px] p-8 md:p-10 relative bg-white/40 group">
-              <p className="text-[#9db7e0] font-bold text-xl mb-4">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-blue-200 opacity-80 z-20 shadow-sm rounded-sm" />
+            <div className="w-full border-2 border-dashed border-blue-200 rounded-[32px] p-8 md:p-10 relative bg-white/40">
+              <p className="text-blue-300 font-bold text-xl mb-4">
                 Sticky Note:
               </p>
-
               <textarea
-                className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-hidden h-24 placeholder:text-[#c0d4ed]"
+                className="w-full bg-transparent border-none focus:ring-0 text-GIMI-blue text-xl font-medium resize-none overflow-hidden h-24 placeholder:text-blue-200"
                 value={note}
                 onChange={(e) => {
                   const newNotes = [...notes];
@@ -278,12 +256,10 @@ const ScheduleDesktopWidget: React.FC = () => {
             </div>
           </div>
         ))}
-
-        {/* Floating Add Button (Circular Plus Sign) */}
         <div className="absolute bottom-8 right-8 z-50">
           <button
             onClick={() => setNotes([...notes, ""])}
-            className="w-20 h-20 bg-[#4b8df2] text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
+            className="w-20 h-20 bg-blue-400 text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
             aria-label="Add Another Sticky Note"
           >
             <svg

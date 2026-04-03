@@ -6,6 +6,7 @@ import TalkToGimi from "../../components/talk-to-gimi/TalkToGimi.tsx";
 import MusicPlayer from "../../components/widget/musicWidget.tsx";
 import PictureWidget from "../../components/widget/pictureWidget.tsx";
 import ScheduleWidgetDesktop from "../../components/schedule/ScheduleDesktopWidget.tsx";
+import ScheduleWidget from "../../components/schedule/ScheduleWidget.tsx";
 import GimiHeadIcon from "../../components/gimi-action-button/gimi-button.tsx";
 import { useAuth } from "../../hooks/useAuth.ts";
 import { Link } from "react-router-dom";
@@ -13,30 +14,51 @@ import { Link } from "react-router-dom";
 export default function DashboardPage() {
   const { user } = useAuth();
   return (
-    <div className="mx-auto">
-      <div className="sticky z-100 bottom-5 right-5">
+    <div className="min-h-screen px-4 py-4 space-y-4 lg:px-6 lg:py-6 lg:space-y-6">
+      <div className="fixed z-50 bottom-5 right-5">
         <GimiHeadIcon />
       </div>
-      <div className="grid grid-cols-2 gap-x-10 mx-auto lg:flex">
-        <WelcomeWidget className="col-span-2" name={user?.username || "Student"} />
-        <MoodBoard />
-        
-      </div>
-      <div className="flex">
-        <div className="mx-6 grid grid-cols-3 gap-x-10 flex-1 lg:flex mb-10">
-          <Link to="/journal" className="flex-1 block">
-            <JournalWidget className="h-full" />
-          </Link>
-          <DoodleWidget className="flex-1" />
-          <TalkToGimi className="flex-1" />
+
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6 lg:items-stretch">
+        <div className="w-full lg:flex-[2]">
+          <WelcomeWidget
+            className="h-full"
+            name={user?.username || "Student"}
+          />
+        </div>
+        <div className="w-full lg:flex-[1]">
+          <MoodBoard className="h-full" />
         </div>
       </div>
-      <div className="mx-auto lg:flex">
-        <div className="grid grid-cols-1 mx-15">
-          <MusicPlayer />
-          <PictureWidget />
+
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+        <Link to="/journal" className="w-full lg:flex-1 block">
+          <JournalWidget className="h-full" />
+        </Link>
+        <div className="w-full lg:flex-1">
+          <DoodleWidget className="h-full" />
         </div>
-        <ScheduleWidgetDesktop />
+        <div className="w-full lg:flex-1">
+          <TalkToGimi className="h-full" />
+        </div>
+      </div>
+
+      <div className="lg:hidden">
+        <ScheduleWidget />
+      </div>
+
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6 lg:items-start">
+        <div className="flex flex-row gap-4 lg:flex-col lg:w-56 lg:shrink-0">
+          <div className="flex-1 lg:flex-none">
+            <MusicPlayer />
+          </div>
+          <div className="flex-1 lg:flex-none">
+            <PictureWidget />
+          </div>
+        </div>
+        <div className="hidden lg:block lg:flex-1">
+          <ScheduleWidgetDesktop />
+        </div>
       </div>
     </div>
   );

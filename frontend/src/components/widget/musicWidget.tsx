@@ -7,11 +7,7 @@ type MusicPlayerProps = {
   cover: string;
 };
 
-export default function MusicPlayer({
-  title,
-  src,
-  cover,
-}: MusicPlayerProps) {
+export default function MusicPlayer({ title, src, cover }: MusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -40,10 +36,8 @@ export default function MusicPlayer({
 
   return (
     <div className="">
-      
       {/* CARD */}
       <div className="relative w-80 bg-white/70 backdrop-blur-md rounded-[2rem] p-5 shadow-xl">
-        
         {/* Tape Sticker */}
         <div className="absolute -top-4 right-6 w-32 h-10 bg-white/40 rotate-12 rounded-md backdrop-blur-sm" />
 
@@ -94,3 +88,4 @@ export default function MusicPlayer({
     </div>
   );
 }
+

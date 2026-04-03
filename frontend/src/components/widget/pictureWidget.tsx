@@ -5,18 +5,17 @@ type PictureProps = {
 
 export default function PictureWidget({ image, title }: PictureProps) {
   return (
-    <div>
-      {/* Card */}
-      <div className="bg-gray-200 p-4 pb-10 shadow-lg w-73 hover:rotate-12 transition-all ease-in-out">
-        {/* Image */}
-        <div className="w-64 h-64 overflow-hidden bg-black">
+    <div className="w-full bg-gray-200 p-4 pb-10 shadow-lg hover:rotate-3 transition-all ease-in-out font-varela">
+      <div className="w-full aspect-square overflow-hidden bg-black">
+        {image ? (
           <img src={image} alt={title} className="w-full h-full object-cover" />
-        </div>
-
-        {/* Caption */}
-        <p className="text-center text-gray-500 mt-4 text-sm">{title}</p>
+        ) : (
+          <div className="w-full h-full bg-slate-800" />
+        )}
       </div>
+      {title && (
+        <p className="text-center text-slate-500 mt-4 text-sm">{title}</p>
+      )}
     </div>
   );
 }
-

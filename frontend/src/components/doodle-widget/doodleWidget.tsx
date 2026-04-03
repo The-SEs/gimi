@@ -13,20 +13,18 @@ export default function DoodleWidget({
 }: DoodleWidgetProps) {
   return (
     <div
-      className={`flex items-center w-[95%] md:w-[30%] gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm cursor-pointer ${className}`}
+      className={`flex items-center w-full gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm cursor-pointer font-varela ${className}`}
     >
       <img
         src={doodleIcon}
         alt="Doodle Icon"
-        className="h-16 w-16 object-contain"
+        className="h-16 w-16 object-contain shrink-0"
       />
-
       <div className="flex flex-col">
-        <span className="text-[1.2rem] sm:text-[1.5rem] font-medium tracking-[-0.02em] text-[#2D4994] leading-snug">
+        <span className="text-xl font-bold tracking-tight text-GIMI-blue leading-snug">
           {title}
         </span>
-
-        <span className="text-[0.9rem] sm:text-[1rem] font-medium tracking-[-0.01em] text-[#7d97ca] leading-snug">
+        <span className="text-sm font-medium text-blue-300 leading-snug">
           {subtitle}
         </span>
       </div>
