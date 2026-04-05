@@ -143,6 +143,44 @@ function rectsOverlap(ax:number,ay:number,aw:number,ah:number,bx:number,by:numbe
   return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
 }
 
+/**
+ * Renders all canvas objects onto a given 2D context.
+ * Shared by save, download, and the live renderAll function.
+ */
+function renderObjectsToCtx(ctx: CanvasRenderingContext2D, objects: CanvasObj[]) {
+  objects.forEach(obj => {
+    ctx.save();
+    ctx.translate(obj.dx, obj.dy);
+
+    if (obj.type === 'stroke') {
+      const { r, g, b } = hexToRgb(obj.color);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = `rgba(${r},${g},${b},${obj.opacity})`;
+      ctx.lineWidth   = obj.lineWidth;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+      ctx.beginPath();
+      for (let i = 0; i < obj.points.length; i += 2) {
+        i === 0
+          ? ctx.moveTo(obj.points[i], obj.points[i + 1])
+          : ctx.lineTo(obj.points[i], obj.points[i + 1]);
+      }
+      ctx.stroke();
+    } else if (obj.type === 'text') {
+      const { r, g, b } = hexToRgb(obj.color);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = `rgba(${r},${g},${b},${obj.opacity})`;
+      ctx.font = `${obj.italic ? 'italic ' : ''}${obj.bold ? 'bold ' : ''}${obj.fontSize}px ${obj.font}`;
+      ctx.fillText(obj.text, obj.x, obj.y);
+    } else if (obj.type === 'image') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
+    }
+
+    ctx.restore();
+  });
+}
+
 // Sub-components 
 const ToolBtn = ({
   active=false, disabled=false, onClick, title, children, className='',
@@ -206,12 +244,12 @@ export default function SketchbookCanvas() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Save state 
-  const [drawingId,    setDrawingId]    = useState<number | null>(null);
-  const [drawingTitle, setDrawingTitle] = useState<string>('');
-  const [isSaving,     setIsSaving]     = useState<boolean>(false);
-  const [saveError,    setSaveError]    = useState<string | null>(null);
+  const [drawingId,     setDrawingId]     = useState<number | null>(null);
+  const [drawingTitle,  setDrawingTitle]  = useState<string>('');
+  const [isSaving,      setIsSaving]      = useState<boolean>(false);
+  const [saveError,     setSaveError]     = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
-
+  const [saveSuccess,   setSaveSuccess]   = useState<boolean>(false);
 
   // Refs that don't need to trigger re-renders 
   const selectState   = useRef<SelectState>({ mode:'idle', lassoStart:null, lassoRect:null, dragStart:null, origPositions:null });
@@ -249,36 +287,7 @@ export default function SketchbookCanvas() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    objects.forEach(obj => {
-      ctx.save();
-      ctx.translate(obj.dx, obj.dy);
-
-      if (obj.type === 'stroke') {
-        const {r,g,b} = hexToRgb(obj.color);
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = `rgba(${r},${g},${b},${obj.opacity})`;
-        ctx.lineWidth   = obj.lineWidth;
-        ctx.lineCap     = 'round';
-        ctx.lineJoin    = 'round';
-        ctx.beginPath();
-        for (let i=0; i<obj.points.length; i+=2) {
-          i===0 ? ctx.moveTo(obj.points[i],obj.points[i+1])
-                : ctx.lineTo(obj.points[i],obj.points[i+1]);
-        }
-        ctx.stroke();
-      } else if (obj.type === 'text') {
-        const {r,g,b} = hexToRgb(obj.color);
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = `rgba(${r},${g},${b},${obj.opacity})`;
-        ctx.font = `${obj.italic?'italic ':''} ${obj.bold?'bold ':''} ${obj.fontSize}px ${obj.font}`;
-        ctx.fillText(obj.text, obj.x, obj.y);
-      } else if (obj.type === 'image') {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
-      }
-
-      ctx.restore();
-    });
+    renderObjectsToCtx(ctx, objects);
 
     // Selection outlines
     if (tool === 'select' && selectedIds.size > 0) {
@@ -315,9 +324,8 @@ export default function SketchbookCanvas() {
   }, [objects, selectedIds, tool]);
 
   
-  //  Save drawing to backend 
+  //  Serialize canvas objects (strip non-serialisable HTMLImageElement) 
   const serializeCanvasData = useCallback(() => {
-    // Strip non-serializable HTMLImageElement
     return objects.map(o => {
       if (o.type === 'image') {
         const { img, ...rest } = o;
@@ -325,6 +333,30 @@ export default function SketchbookCanvas() {
       }
       return o;
     });
+  }, [objects]);
+
+  /**
+   * Exports the current canvas contents to a base64 PNG string.
+   * Uses the shared renderObjectsToCtx helper so it's identical
+   * to what the user sees on screen (and to handleDownloadDrawing).
+   */
+  const exportCanvasToBase64 = useCallback((): string => {
+    const canvas = canvasRef.current;
+    if (!canvas) return '';
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width  = canvas.width;
+    exportCanvas.height = canvas.height;
+
+    const ctx = exportCanvas.getContext('2d');
+    if (!ctx) return '';
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    renderObjectsToCtx(ctx, objects);
+
+    return exportCanvas.toDataURL('image/png');
   }, [objects]);
 
 
@@ -338,42 +370,10 @@ export default function SketchbookCanvas() {
       setIsSaving(true);
       setSaveError(null);
 
-      const canvas = canvasRef.current;
-      let imageB64 = '';
-
-      if(canvas) {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        if(tempCtx) {
-          tempCtx.fillStyle = '#ffffff';
-          tempCtx.fillRect(0,0,tempCanvas.width, tempCanvas.height);
-
-          objects.forEach(obj => {
-            tempCtx.save();
-            tempCtx.translate(obj.dx, obj.dy);
-
-            if(obj.type === 'stroke') {
-              const { r, g, b } = hexToRgb(obj.color);
-              tempCtx.fillStyle = `rgba(${r}, ${g}, ${b}, ${obj.opacity})`;
-              tempCtx.font =`${obj.italic ? 'italic': ''}${obj.bold ? 'bold' : ''}{obj.fontSize}px ${obj.font}`;
-              tempCtx.fillText(obj.text, obj.x, obj.y);
-            } else if (obj.type === 'image') {
-              tempCtx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
-            }
-
-
-            tempCtx.restore();
-          });
-
-
-          imageB64 = tempCanvas.toDataURL('image/png');
-        }
-      }
-
+      // Export canvas to base64 using the shared helper
+      const imageB64 = exportCanvasToBase64();
       const canvasData = serializeCanvasData();
+
       const result = await canvasService.saveDrawing(
         title,
         canvasData,
@@ -381,29 +381,26 @@ export default function SketchbookCanvas() {
         drawingId || undefined
       );
 
-
-      if(!result || typeof result.id !== 'number') {
+      if (!result || typeof result.id !== 'number') {
         throw new Error('Invalid response from server');
       }
 
-      // Update the drawing ID if this was a new drawing
+      // Persist the ID so subsequent saves become PUTs
       if (!drawingId) {
         setDrawingId(result.id);
       }
 
-      // Reset title and close modal after successful save
       setDrawingTitle('');
       setShowSaveModal(false);
-
-      // Show success notification (via console for now)
-      console.log(`✓ Drawing saved successfully${drawingId ? ' (updated)' : ' (created)'}`);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
       let message = 'Failed to save drawing';
       if (err instanceof Error) {
-        if (err.message.includes('401')) message = 'Not authenticated. Please log in';
+        if (err.message.includes('401'))      message = 'Not authenticated. Please log in';
         else if (err.message.includes('400')) message = 'Invalid data. Please check your input';
         else if (err.message.includes('500')) message = 'Server error. Please try again later';
-        else message = err.message;
+        else                                  message = err.message;
       }
       setSaveError(message);
       console.error('Failed to save drawing:', err);
@@ -438,7 +435,6 @@ export default function SketchbookCanvas() {
 
   // History 
   const saveSnapshot = useCallback((objs: CanvasObj[]) => {
-    // Strip non-serialisable HTMLImageElement before JSON
     const serialisable = objs.map(o =>
       o.type==='image' ? { ...o, img: undefined } : o
     );
@@ -495,81 +491,37 @@ export default function SketchbookCanvas() {
 
 
   const handleDownloadDrawing = useCallback(() => {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  try {
-    // Create a new canvas with the same dimensions as the displayed canvas
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = canvas.width;
-    exportCanvas.height = canvas.height;
+    try {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width  = canvas.width;
+      exportCanvas.height = canvas.height;
 
-    const ctx = exportCanvas.getContext('2d');
-    if (!ctx) return;
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) return;
 
-    // Fill with white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      renderObjectsToCtx(ctx, objects);
 
-    // Draw ALL objects manually to ensure they're captured correctly
-    // This is more reliable than copying the canvas since the canvas might not be fully rendered
-    objects.forEach(obj => {
-      ctx.save();
-      ctx.translate(obj.dx, obj.dy);
-
-      if (obj.type === 'stroke') {
-        const { r, g, b } = hexToRgb(obj.color);
-        ctx.strokeStyle = `rgba(${r},${g},${b},${obj.opacity})`;
-        ctx.lineWidth = obj.lineWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        for (let i = 0; i < obj.points.length; i += 2) {
-          i === 0 
-            ? ctx.moveTo(obj.points[i], obj.points[i + 1])
-            : ctx.lineTo(obj.points[i], obj.points[i + 1]);
-        }
-        ctx.stroke();
-      } else if (obj.type === 'text') {
-        const { r, g, b } = hexToRgb(obj.color);
-        ctx.fillStyle = `rgba(${r},${g},${b},${obj.opacity})`;
-        ctx.font = `${obj.italic ? 'italic ' : ''}${obj.bold ? 'bold ' : ''}${obj.fontSize}px ${obj.font}`;
-        ctx.fillText(obj.text, obj.x, obj.y);
-      } else if (obj.type === 'image') {
-        ctx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
-      }
-
-      ctx.restore();
-    });
-
-    // Convert to blob and download
-    exportCanvas.toBlob((blob) => {
-      if (!blob) {
-        console.error('Failed to create blob');
-        return;
-      }
-      
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `Doodle-${today.replace(/,?\s+/g, '-')}.png`;
-      link.style.display = 'none';
-      
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      }, 100);
-    }, 'image/png', 1.0);
-    
-  } catch (error) {
-    console.error('Error downloading drawing:', error);
-    setSaveError('Failed to download drawing');
-  }
-}, [objects, today]);
+      exportCanvas.toBlob((blob) => {
+        if (!blob) { console.error('Failed to create blob'); return; }
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = blobUrl;
+        link.download = `Doodle-${today.replace(/,?\s+/g, '-')}.png`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(blobUrl); }, 100);
+      }, 'image/png', 1.0);
+    } catch (error) {
+      console.error('Error downloading drawing:', error);
+      setSaveError('Failed to download drawing');
+    }
+  }, [objects, today]);
 
 
   //  Canvas coordinate helper 
@@ -643,12 +595,7 @@ export default function SketchbookCanvas() {
       lineWidth: tool === 'brush' ? thickness * 3 : thickness,
       points: [pos.x, pos.y],
       dx: 0, dy: 0,
-      y: 0,
-      x: 0,
-      text: '',
-      font: undefined,
-      bold: undefined,
-      italic: undefined
+      y: 0, x: 0, text: '', font: undefined, bold: undefined, italic: undefined,
     };
     currentStroke.current = stroke;
     setObjects(prev => [...prev, stroke]);
@@ -890,6 +837,13 @@ export default function SketchbookCanvas() {
             </p>
           )}
 
+          {/* Save success toast */}
+          {saveSuccess && (
+            <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-white/95 backdrop-blur-xl border border-[rgba(180,140,220,.3)] rounded-2xl px-4 py-2.5 shadow-[0_4px_20px_rgba(180,140,220,.25)] animate-in fade-in slide-in-from-top-2">
+              <span className="text-[13px] font-semibold text-[#6b5b95]">✓ Drawing saved!</span>
+            </div>
+          )}
+
           {/* Date + Title */}
           <div className="mb-2">
             <p className="text-[11px] font-semibold tracking-wide text-[#b8a8d4]">{today}</p>
@@ -959,7 +913,6 @@ export default function SketchbookCanvas() {
                   style={{ fontFamily:font, fontWeight:isBold?'bold':'normal', fontStyle:isItalic?'italic':'normal', fontSize }}
                 />
 
-                {/* Controls: font + size + B + I on one line */}
                 <div className="flex items-center gap-1.5 w-full">
                   <select value={font} onChange={e=>setFont(e.target.value)}
                           className="text-[11px] rounded-lg border border-[rgba(180,140,220,.3)] px-1.5 py-1.5 text-[#6b5b95] bg-white/80 outline-none cursor-pointer flex-1 min-w-0">
@@ -1006,6 +959,7 @@ export default function SketchbookCanvas() {
                   type="text"
                   value={drawingTitle}
                   onChange={e=>setDrawingTitle(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveDrawing(drawingTitle || `Doodle - ${today}`); }}
                   placeholder={`Doodle - ${today}`}
                   className="w-full rounded-xl border border-[rgba(180,140,220,.3)] bg-white/80 px-3 py-2 text-sm text-[#4a3a6a] outline-none focus:border-[#c9b8f0] placeholder:text-[#c9b8f0] transition-colors"
                 />
@@ -1031,7 +985,7 @@ export default function SketchbookCanvas() {
                         Saving...
                       </>
                     ) : (
-                      <>Save Drawing</> 
+                      <>Save Drawing</>
                     )}
                   </button>
                 </div>
