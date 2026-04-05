@@ -15,6 +15,7 @@ import NurseAdminPage from "../pages/admin/nurse.tsx";
 import SecurityAdminPage from "../pages/admin/security.tsx";
 import AdminLayout from "../layout/adminLayout.tsx";
 import AdminDashboard from "../pages/admin/dashboard.tsx";
+import ForgotPasswordPage from "../pages/onboarding/forgot_password.tsx";
 
 const RegisterWrapper = () => {
   const navigate = useNavigate();
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
   {
     path: "/onboarding-questions",
     element: <OnboardingQuestions />,
+  },
+    {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
   },
   // ONLY FOR TESTING. PLEASE MOVE EVENTUALLY.
   {

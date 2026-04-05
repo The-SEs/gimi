@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import GimiHeadIcon from "../../assets/gimi_head_icon.svg";
+import GimiHeadIcon from "../../assets/gimi_head_icon.svg"
+import { useNavigate } from "react-router-dom"
 
 type GimiActionButtonProps = {
-  message?: string;
-  intervalMs?: number;
-  visibleDurationMs?: number;
-  initialDelayMs?: number;
-  onClick?: () => void;
-};
+  message?: string
+  intervalMs?: number
+  visibleDurationMs?: number
+  initialDelayMs?: number
+  onClick?: () => void
+}
 
 export default function GimiActionButton({
   message = "Need assistance?\nFeel free to click me!",
@@ -17,44 +18,51 @@ export default function GimiActionButton({
   initialDelayMs = 12_000,
   onClick,
 }: GimiActionButtonProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-  const [isAutoVisible, setIsAutoVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
+  const [isAutoVisible, setIsAutoVisible] = useState(false)
 
-  const intervalIdRef = useRef<number | null>(null);
-  const hideTimeoutIdRef = useRef<number | null>(null);
-  const initialTimeoutIdRef = useRef<number | null>(null);
+  const intervalIdRef = useRef<number | null>(null)
+  const hideTimeoutIdRef = useRef<number | null>(null)
+  const initialTimeoutIdRef = useRef<number | null>(null)
 
-  const showBubble = isHovered || isFocused || isAutoVisible;
+  const navigate = useNavigate()
 
-  const messageLines = useMemo(() => message.split("\n"), [message]);
+  const showBubble = isHovered || isFocused || isAutoVisible
+
+  const messageLines = useMemo(() => message.split("\n"), [message])
 
   useEffect(() => {
     const clearHideTimeout = () => {
-      if (hideTimeoutIdRef.current === null) return;
-      window.clearTimeout(hideTimeoutIdRef.current);
-      hideTimeoutIdRef.current = null;
-    };
+      if (hideTimeoutIdRef.current === null) return
+      window.clearTimeout(hideTimeoutIdRef.current)
+      hideTimeoutIdRef.current = null
+    }
 
     const showAutoBubble = () => {
-      clearHideTimeout();
-      setIsAutoVisible(true);
+      clearHideTimeout()
+      setIsAutoVisible(true)
 
       hideTimeoutIdRef.current = window.setTimeout(() => {
-        setIsAutoVisible(false);
-        hideTimeoutIdRef.current = null;
-      }, visibleDurationMs);
-    };
+        setIsAutoVisible(false)
+        hideTimeoutIdRef.current = null
+      }, visibleDurationMs)
+    }
 
-    initialTimeoutIdRef.current = window.setTimeout(showAutoBubble, initialDelayMs);
-    intervalIdRef.current = window.setInterval(showAutoBubble, intervalMs);
+    initialTimeoutIdRef.current = window.setTimeout(
+      showAutoBubble,
+      initialDelayMs,
+    )
+    intervalIdRef.current = window.setInterval(showAutoBubble, intervalMs)
 
     return () => {
-      if (intervalIdRef.current !== null) window.clearInterval(intervalIdRef.current);
-      if (initialTimeoutIdRef.current !== null) window.clearTimeout(initialTimeoutIdRef.current);
-      clearHideTimeout();
-    };
-  }, [initialDelayMs, intervalMs, visibleDurationMs]);
+      if (intervalIdRef.current !== null)
+        window.clearInterval(intervalIdRef.current)
+      if (initialTimeoutIdRef.current !== null)
+        window.clearTimeout(initialTimeoutIdRef.current)
+      clearHideTimeout()
+    }
+  }, [initialDelayMs, intervalMs, visibleDurationMs])
 
   return (
     <div className="fixed bottom-5 right-5 z-50 sm:bottom-8 sm:right-8 cursor-pointer">
@@ -63,8 +71,12 @@ export default function GimiActionButton({
           className={[
             "relative max-w-[calc(100vw-140px)] rounded-[18px] border-2 border-[#A9C5FF] bg-[#E6EEF9] px-4 py-3 text-left shadow-[0_18px_45px_rgba(16,24,40,0.22)] sm:max-w-65]",
             "transition-[opacity,transform] duration-250 ease-out will-change-[opacity,transform]",
-            showBubble ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2",
-            isAutoVisible && !isHovered && !isFocused ? "gimi-alert-bounce" : "",
+            showBubble
+              ? "opacity-100 translate-y-0"
+              : "pointer-events-none opacity-0 translate-y-2",
+            isAutoVisible && !isHovered && !isFocused
+              ? "gimi-alert-bounce"
+              : "",
           ]
             .filter(Boolean)
             .join(" ")}
@@ -83,7 +95,7 @@ export default function GimiActionButton({
 
         <button
           type="button"
-          onClick={onClick}
+          onClick={() => navigate("/chat")}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onFocus={() => setIsFocused(true)}
@@ -102,5 +114,5 @@ export default function GimiActionButton({
         </button>
       </div>
     </div>
-  );
+  )
 }
