@@ -5,6 +5,8 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.utils import timezone
+from datetime import timedelta
+import random
 
 
 class CustomUserManager(BaseUserManager):
@@ -51,3 +53,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # type: ignore
 
     def __str__(self):  # type: ignore
         return self.email
+
+class PasswordResetCode(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    code = models.CharField(max_length=4)
+    created_at = models.DateTimeField(auto_now=True)
+
+    def generate_code(self):
+        self.code = str(random.randint(1000, 9999))
+        self.save()
+        return self.code
+
+    def is_valid(self):
+        return timezone.now() < self.created_at + timedelta(minutes=15)

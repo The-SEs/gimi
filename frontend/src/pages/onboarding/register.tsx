@@ -30,6 +30,22 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    const localErrors: ApiError = {}
+
+    if (password.length < 8) {
+      localErrors.password = {"Password must be at least 8 characters long"};
+    }
+
+    if (password !== confirmPassword) {
+      localErrors.password = {"Passwords do not match"};
+    }
+
+    if (!username.trim()) {
+      localErrors.username = {"Nickname cannot be empty"};
+    }
+
+    
     try {
       await register({
         email,
