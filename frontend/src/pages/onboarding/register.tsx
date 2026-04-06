@@ -34,15 +34,15 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
     const localErrors: ApiError = {}
 
     if (password.length < 8) {
-      localErrors.password = {"Password must be at least 8 characters long"};
+      localErrors.password = ["Password must be at least 8 characters long"];
     }
 
     if (password !== confirmPassword) {
-      localErrors.password = {"Passwords do not match"};
+      localErrors.password = ["Passwords do not match"];
     }
 
     if (!username.trim()) {
-      localErrors.username = {"Nickname cannot be empty"};
+      localErrors.username = ["Nickname cannot be empty"];
     }
 
     
