@@ -21,6 +21,12 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter a valid email and password");
+      return;
+    }
+
     try {
       const response = (await login({ username: email, password })) as any
 

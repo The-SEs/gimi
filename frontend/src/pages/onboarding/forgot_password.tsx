@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import GimiIcon from "../../assets/GIMI_Icon.svg";
+import { authService } from "../../services/authService";
 
 type Step = "email" | "code" | "password";
 
@@ -30,7 +31,7 @@ export default function ForgotPasswordPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      // TODO: await api.sendResetCode(email);
+      await authService.requestPasswordReset(email);
       setStep("code");
     } catch {
       setError("Could not send reset code. Please try again.");
@@ -49,7 +50,7 @@ export default function ForgotPasswordPage() {
     }
     setIsSubmitting(true);
     try {
-      // TODO: await api.verifyResetCode(email, fullCode);
+      await authService.verifyPasswordResetCode(email, fullCode);
       setStep("password");
     } catch {
       setError("Invalid or expired code. Please try again.");
@@ -71,7 +72,7 @@ export default function ForgotPasswordPage() {
     }
     setIsSubmitting(true);
     try {
-      // TODO: await api.resetPassword(email, code.join(""), newPassword);
+      await authService.resetPassword(email, code.join(""), newPassword);
       navigate("/");
     } catch {
       setError("Could not reset password. Please try again.");
