@@ -80,4 +80,29 @@ export const authService = {
     })
     return response.data
   },
+
+  /**
+   * Request a 4-digit password reset code
+   */
+  requestPasswordReset: async (email: string): Promise<void> => {
+    await api.post("/api/users/request-reset/", { email })
+  },
+
+  /**
+   * Verify the 4-digit code
+   */
+  verifyPasswordResetCode: async (email: string, code: string): Promise<void> => {
+    await api.post("/api/users/verify-reset/", { email, code })
+  },
+
+  /**
+   * Submit the new password with the verified code
+   */
+  resetPassword: async (email: string, code: string, new_password: string): Promise<void> => {
+    await api.post("/api/users/reset-password/", { 
+      email, 
+      code, 
+      new_password 
+    })
+  },
 }

@@ -1,10 +1,67 @@
-# backend/users/views.py
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import CustomUser, PasswordResetCode
 # Create your views here.
 
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
+
+class RequestResetCodeView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = CustomUser.objects.get(email=email)
+            reset_obj, _ = PasswordResetCode.objects.get_or_create(user=user)
+            code = reset_obj.generate_code()
+            
+            send_mail(
+                'Your Gimi Password Reset Code',
+                f'Your 4-digit reset code is: {code}. It expires in 15 minutes.',
+                settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
+            )
+        except CustomUser.DoesNotExist:
+            pass
+            
+        return Response({"detail": "If the email exists, a code was sent."}, status=status.HTTP_200_OK)
+
+class VerifyResetCodeView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        try:
+            user = CustomUser.objects.get(email=email)
+            reset_obj = PasswordResetCode.objects.get(user=user, code=code)
+            
+            if reset_obj.is_valid():
+                return Response({"detail": "Code is valid."}, status=status.HTTP_200_OK)
+            return Response({"error": "Code has expired."}, status=status.HTTP_400_BAD_REQUEST)
+        except (CustomUser.DoesNotExist, PasswordResetCode.DoesNotExist):
+            return Response({"error": "Invalid code."}, status=status.HTTP_400_BAD_REQUEST)
+
+class ResetPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('new_password')
+        
+        try:
+            user = CustomUser.objects.get(email=email)
+            reset_obj = PasswordResetCode.objects.get(user=user, code=code)
+            
+            if reset_obj.is_valid():
+                user.set_password(new_password)
+                user.save()
+                reset_obj.delete() # Clean up the code
+                return Response({"detail": "Password successfully reset."}, status=status.HTTP_200_OK)
+            return Response({"error": "Code has expired."}, status=status.HTTP_400_BAD_REQUEST)
+        except (CustomUser.DoesNotExist, PasswordResetCode.DoesNotExist):
+            return Response({"error": "Invalid code."}, status=status.HTTP_400_BAD_REQUEST)
