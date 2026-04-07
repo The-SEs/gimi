@@ -1,40 +1,87 @@
-import { SkipBack, SkipForward, Music } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Play, Pause, SkipBack, SkipForward, Music } from "lucide-react"
 
 type MusicPlayerProps = {
   title: string
-  url: string
+  audioUrl: string // Coming from Django's audio_file field
   onNext: () => void
   onPrev: () => void
 }
 
 export default function MusicPlayer({
   title,
-  url,
+  audioUrl,
   onNext,
   onPrev,
 }: MusicPlayerProps) {
-  // 1. Clean the URL and check types
-  const cleanUrl = url ? url.trim() : ""
-  const isSpotify = cleanUrl.includes("spotify.com")
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
 
-  // 2. Helper to get Spotify Embed URL
-  const getSpotifyEmbedUrl = (link: string) => {
-    if (link.includes("/embed/")) return link
-    // Converts standard links to embed links
-    const idMatch = link.match(/track\/([^?]+)/)
-    const id = idMatch ? idMatch[1] : ""
-    return `https://open.spotify.com/embed/track/${id}`
+  // The hidden HTML5 Audio Engine
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+    }
+
+    // Ensure the URL is absolute so React can find it on your Django server
+    const fullUrl = audioUrl?.startsWith("http")
+      ? audioUrl
+      : `http://127.0.0.1:8000${audioUrl}`
+
+    audioRef.current = new Audio(fullUrl)
+    setIsPlaying(false)
+    setProgress(0)
+
+    // Sync audio time with the blue progress bar
+    const updateProgress = () => {
+      if (audioRef.current && audioRef.current.duration) {
+        setProgress(
+          (audioRef.current.currentTime / audioRef.current.duration) * 100,
+        )
+      }
+    }
+
+    const handleEnded = () => {
+      setIsPlaying(false)
+      onNext()
+    }
+
+    audioRef.current.addEventListener("timeupdate", updateProgress)
+    audioRef.current.addEventListener("ended", handleEnded)
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener("timeupdate", updateProgress)
+        audioRef.current.removeEventListener("ended", handleEnded)
+        audioRef.current.pause()
+      }
+    }
+  }, [audioUrl, onNext])
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
   }
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const seekPercentage = Number(e.target.value)
 
-  // 3. Helper to get YouTube ID from any link format
-  const getYouTubeId = (link: string) => {
-    const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-    const match = link.match(regExp)
-    return match && match[2].length === 11 ? match[2] : null
+    if (audioRef.current && audioRef.current.duration) {
+      // Convert percentage back into seconds
+      const newTime = (seekPercentage / 100) * audioRef.current.duration
+      audioRef.current.currentTime = newTime
+
+      // Update the visual bar instantly
+      setProgress(seekPercentage)
+    }
   }
-
-  const ytId = getYouTubeId(cleanUrl)
 
   return (
     <div className="relative w-80 bg-white/70 backdrop-blur-md rounded-[2rem] p-5 shadow-xl border border-white/20">
@@ -42,62 +89,68 @@ export default function MusicPlayer({
       <div className="absolute -top-4 right-6 w-32 h-10 bg-white/60 rotate-12 rounded-md backdrop-blur-sm shadow-sm z-10" />
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-6">
         <Music className="text-blue-600" size={20} />
         <h2 className="text-gray-800 font-semibold text-lg truncate">
           {title}
         </h2>
       </div>
 
-      <div className="bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center h-48 relative">
-        {isSpotify ? (
-          /* --- NATIVE SPOTIFY IFRAME --- */
-          <iframe
-            src={getSpotifyEmbedUrl(cleanUrl)}
-            width="100%"
-            height="152"
-            className="rounded-xl border-0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          />
-        ) : ytId ? (
-          /* --- NATIVE YOUTUBE IFRAME --- */
-          <iframe
-            width="100%"
-            height="100%"
-            src={`https://www.youtube.com/embed/${ytId}?modestbranding=1&rel=0`}
-            title="YouTube video player"
-            className="border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          /* --- FALLBACK --- */
-          <div className="text-gray-500 text-xs p-4 text-center">
-            Unsupported link format.
-            <br />
-            Please use a standard YouTube or Spotify URL.
-          </div>
-        )}
+      {/* Visualizer (Spins when playing) */}
+      <div className="relative w-full h-48 bg-gray-900 rounded-2xl shadow-inner flex items-center justify-center overflow-hidden">
+        <div
+          className={`w-28 h-28 bg-white/10 rounded-full border-4 border-gray-700 flex items-center justify-center ${isPlaying ? "animate-[spin_3s_linear_infinite]" : ""}`}
+        >
+          <div className="w-8 h-8 bg-gray-900 rounded-full"></div>
+        </div>
       </div>
 
-      {/* NOTE ON THE PROGRESS BAR:
-          Since we are not using a library, we cannot "read" the time from inside the YouTube iframe.
-          The user will use the progress bar ALREADY BUILT INTO the YouTube player above.
-      */}
+      {/* INTERACTIVE PROGRESS BAR */}
+      <div className="mt-8 relative w-full h-3 flex items-center group">
+        {/* 1. The Visual Bar  */}
+        <div className="absolute top-1 left-0 w-full h-1.5 bg-black/10 rounded-full overflow-hidden pointer-events-none">
+          <div
+            className="absolute top-0 left-0 h-full bg-blue-600 transition-all duration-75 ease-linear group-hover:bg-blue-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
 
-      {/* Custom Playlist Controls */}
-      <div className="flex justify-center items-center gap-12 mt-6">
+        {/* 2. The Invisible Interactive Slider  */}
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1" // Smooth dragging
+          value={progress || 0}
+          onChange={handleSeek}
+          className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
+        />
+      </div>
+      {/* Custom Controls */}
+      <div className="flex justify-center items-center gap-8 mt-6 relative z-10">
         <button
           onClick={onPrev}
-          className="p-2 text-gray-700 hover:text-blue-600 transition-colors bg-white/50 rounded-full shadow-sm hover:scale-105"
+          className="text-gray-600 hover:text-blue-600 transition-colors"
         >
-          <SkipBack size={20} />
+          <SkipBack size={24} />
         </button>
+
+        <button
+          onClick={togglePlay}
+          className="bg-black text-white p-4 rounded-full shadow-lg hover:scale-105 transition-transform"
+        >
+          {isPlaying ? (
+            <Pause size={24} fill="currentColor" />
+          ) : (
+            <Play size={24} fill="currentColor" />
+          )}
+        </button>
+
         <button
           onClick={onNext}
-          className="p-2 text-gray-700 hover:text-blue-600 transition-colors bg-white/50 rounded-full shadow-sm hover:scale-105"
+          className="text-gray-600 hover:text-blue-600 transition-colors"
         >
-          <SkipForward size={20} />
+          <SkipForward size={24} />
         </button>
       </div>
     </div>

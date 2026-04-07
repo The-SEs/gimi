@@ -34,5 +34,5 @@ class VectorDrawingSerializer(serializers.ModelSerializer):
 class StudentTrackSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentTrack
-        fields = ['id', 'title', 'url', 'added_at']
-        read_only_fields = ['id', 'added_at']
+        fields = ['id', 'title', 'audio_file', 'created_at']
+        read_only_fields = ['id', 'created_at']

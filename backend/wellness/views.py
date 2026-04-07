@@ -6,6 +6,7 @@ from django.db.models import Count
 from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework.views import APIView
+from rest_framework.parsers import FormParser, MultiPartParser
 
 from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
 from .serializers import (
@@ -234,9 +235,11 @@ class StudentTrackListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentTrackSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    parser_classes = [MultiPartParser, FormParser]
+
     def get_queryset(self):
         # return music belonging to logged in user
-        return StudentTrack.objects.filter(user=self.request.user).order_by('added_at')
+        return StudentTrack.objects.filter(user=self.request.user).order_by('created_at')
 
     def perform_create(self, serializer):
         # automatically attach logged in user to new song
