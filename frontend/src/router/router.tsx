@@ -16,6 +16,7 @@ import SecurityAdminPage from "../pages/admin/security.tsx";
 import AdminLayout from "../layout/adminLayout.tsx";
 import AdminDashboard from "../pages/admin/dashboard.tsx";
 import ForgotPasswordPage from "../pages/onboarding/forgot_password.tsx";
+import ResourcesPage from "../pages/resources/resources.tsx";
 
 const RegisterWrapper = () => {
   const navigate = useNavigate();
@@ -57,6 +58,11 @@ export const router = createBrowserRouter([
     {
     path: "/forgot-password",
     element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/resources",
+    element: <MainLayout />,
+    children: [{ path: "", element: <ResourcesPage /> }],
   },
   // ONLY FOR TESTING. PLEASE MOVE EVENTUALLY.
   {
