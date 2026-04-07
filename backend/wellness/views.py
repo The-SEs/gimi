@@ -5,16 +5,18 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Count
 from django.db import IntegrityError
 from django.utils import timezone
+from rest_framework.views import APIView
 
-from .models import JournalEntry, UserMood, DailyMood, VectorDrawing
+from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
 from .serializers import (
     JournalEntrySerializer, UserMoodSerializer,
-    DailyMoodSerializer, VectorDrawingSerializer,
+    DailyMoodSerializer, VectorDrawingSerializer, StudentTrackSerializer
 )
 from .services import analyze_mood
 
 from safety.services import check_journal
 from safety.ai_utils import get_llama_response
+from wellness.services import embed_drawing
 
 
 def _save_mood(entry):
@@ -222,10 +224,43 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return VectorDrawing.objects.filter(user=self.request.user)
-    
+
     def perform_update(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64", "")
         embedding = embed_drawing(image_b64) if image_b64 else None
         serializer.save(embedding=embedding)
 
+class StudentTrackListCreateView(generics.ListCreateAPIView):
+    serializer_class = StudentTrackSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        # return music belonging to logged in user
+        return StudentTrack.objects.filter(user=self.request.user).order_by('added_at')
+
+    def perform_create(self, serializer):
+        # automatically attach logged in user to new song
+        serializer.save(user=self.request.user)
+
+class StudentTrackDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        print(f"\n🔥 --- NUCLEAR DELETE TRIGGERED FOR ID: {pk} --- 🔥")
+
+        # 1. Blindly check if it exists AT ALL in the entire database
+        track = StudentTrack.objects.filter(id=pk).first()
+
+        if not track:
+            print("🚨 VERDICT: Ghost Track! It is completely missing from the database.")
+            return Response({"error": "Track not found"}, status=404)
+
+        # 2. Check if Matty actually owns it
+        if track.user != request.user:
+            print(f"🚨 VERDICT: Ownership mismatch! Song belongs to User ID {track.user.id}, but you are User ID {request.user.id}")
+            return Response({"error": "Not your song!"}, status=403)
+
+        # 3. If it passes both tests, destroy it
+        print("✅ VERDICT: Song found and verified. Deleting now...")
+        track.delete()
+        return Response({"success": "Deleted!"}, status=204)
