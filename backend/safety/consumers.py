@@ -2,6 +2,7 @@ import json
 import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async  # <-- 1. Import this tool
+from wellness.views import get_smart_snippet
 from safety.services import check_journal  # <-- 2. Import your safety logic
 import os
 from dotenv import load_dotenv
@@ -12,7 +13,15 @@ BASE_URL = os.getenv("OLLAMA_BASE_URL")
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+
+        await self.channel_layer.group_add("guidance_alerts", self.channel_name)
         await self.accept()
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard("guidance_alerts", self.channel_name)
+
+    async def safety_alert(self, event):
+        await self.send(text_data=json.dumps(event))
 
     async def receive(self, text_data=None, bytes_data=None):
         if text_data:
@@ -24,14 +33,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # --- THE INTERCEPTOR ---
             is_dangerous, matched_phrase, distance = await sync_to_async(check_journal)(user_message)
 
+
             if is_dangerous:
                 # 1. Safely attempt to save to the database without crashing the chat
+                chat_snippet = get_smart_snippet(user_message, matched_phrase)
+
                 try:
                     user = self.scope.get("user")
                     if user and user.is_authenticated:
                         await sync_to_async(SafetyFlag.objects.create)(
                             user=user,
-                            flagged_text=user_message,
+                            flagged_text=chat_snippet,
                             matched_phrases=[matched_phrase] if matched_phrase else [],
                             risk_level='High'
                         )
