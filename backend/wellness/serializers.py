@@ -1,7 +1,8 @@
 # serializers.py
 from rest_framework import serializers
-from .models import JournalEntry, UserMood, DailyMood, VectorDrawing
+from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
 from django.utils import timezone
+
 
 class UserMoodSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,3 +30,9 @@ class VectorDrawingSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "image_b64" : {"write_only": True},
         }
+
+class StudentTrackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentTrack
+        fields = ['id', 'title', 'audio_file', 'created_at']
+        read_only_fields = ['id', 'created_at']

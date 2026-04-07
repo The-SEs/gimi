@@ -15,4 +15,7 @@ urlpatterns = [
     # vector drawing
     path("drawings/", views.VectorDrawingListCreateView.as_view()),
     path("drawings/<int:pk>/", views.VectorDrawingDetailView.as_view()),
+    # music
+    path("tracks/", views.StudentTrackListCreateView.as_view()),
+    path("tracks/<int:pk>/", views.StudentTrackDetailView.as_view())
 ]

@@ -222,6 +222,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # url to spyke's machine para ai and dapat tailscalers
 LLM_BASE_URL = "http:100.100.111.14/v1/chat/completions"
 

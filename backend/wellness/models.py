@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from pgvector.django import VectorField
+from users.models import CustomUser
 
 class DailyMood(models.Model):
     #manual daily mood log once a day
@@ -92,3 +93,12 @@ class VectorDrawing(models.Model):
 
     def __str__(self):
         return f"Drawing by {self.user.email} on {self.created_at.date()}"
+
+class StudentTrack(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='music_tracks')
+    title = models.CharField(max_length=200)
+    audio_file = models.FileField(upload_to='music/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.user.email}"

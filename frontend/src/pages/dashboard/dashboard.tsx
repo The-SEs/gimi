@@ -1,17 +1,17 @@
-import WelcomeWidget from "../../components/welcome-widget/WelcomeWidget.tsx";
-import MoodBoard from "../../components/mood-widget/MoodBoard.tsx";
-import JournalWidget from "../../components/journal-widget/JournalWidget.tsx";
-import DoodleWidget from "../../components/doodle-widget/doodleWidget.tsx";
-import TalkToGimi from "../../components/talk-to-gimi/TalkToGimi.tsx";
-import MusicPlayer from "../../components/widget/musicWidget.tsx";
-import PictureWidget from "../../components/widget/pictureWidget.tsx";
-import ScheduleWidgetDesktop from "../../components/schedule/ScheduleDesktopWidget.tsx";
-import GimiHeadIcon from "../../components/gimi-action-button/gimi-button.tsx";
-import { useAuth } from "../../hooks/useAuth.ts";
-import { Link } from "react-router-dom";
+import WelcomeWidget from "../../components/welcome-widget/WelcomeWidget.tsx"
+import MoodBoard from "../../components/mood-widget/MoodBoard.tsx"
+import JournalWidget from "../../components/journal-widget/JournalWidget.tsx"
+import DoodleWidget from "../../components/doodle-widget/doodleWidget.tsx"
+import TalkToGimi from "../../components/talk-to-gimi/TalkToGimi.tsx"
+import PictureWidget from "../../components/widget/pictureWidget.tsx"
+import ScheduleWidgetDesktop from "../../components/schedule/ScheduleDesktopWidget.tsx"
+import GimiHeadIcon from "../../components/gimi-action-button/gimi-button.tsx"
+import { useAuth } from "../../hooks/useAuth.ts"
+import { Link } from "react-router-dom"
+import PlaylistManager from "../../components/widget/playlistManager.tsx"
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user } = useAuth()
   return (
     <div className="mx-auto">
       <div className="sticky z-100 bottom-5 right-5 sm:invisible md:visible lg:visible">
@@ -35,11 +35,11 @@ export default function DashboardPage() {
       </div>
       <div className="mx-auto lg:flex">
         <div className="grid grid-cols-1 mx-15">
-          <MusicPlayer />
-          <PictureWidget />
+          <PlaylistManager />
+          <PictureWidget image={""} />
         </div>
         <ScheduleWidgetDesktop />
       </div>
     </div>
-  );
+  )
 }
