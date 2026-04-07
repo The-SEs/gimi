@@ -6,6 +6,7 @@ interface SafetyFlag {
   id: number
   user_name: string
   user_email: string
+  flagged_text: string
   matched_phrases: string[]
   risk_level: string
   timestamp: string
@@ -119,18 +120,13 @@ export default function AdminDashboard() {
                   {flag.user_email}
                 </div>
 
-                <div className="order-4 md:order-none col-span-2 md:col-span-1 flex flex-wrap justify-start md:justify-center gap-2 mt-3 md:mt-0">
-                  {flag.matched_phrases.map((keyword, kIndex) => (
-                    <button
-                      key={kIndex}
-                      className="bg-[#fce3e2] text-[#c03d3f] px-4 py-2 rounded-full text-xs font-semibold hover:bg-red-200 transition-colors cursor-pointer active:bg-red-200 capitalize"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                      }}
-                    >
-                      {keyword}
-                    </button>
-                  ))}
+                {/* Column 3: Flagged Content (Red Pill Style) */}
+                <div className="order-4 md:order-none col-span-2 md:col-span-1 flex justify-start md:justify-center px-4 mt-3 md:mt-0">
+                  <div className="bg-[#fce3e2] text-[#c03d3f] px-4 py-2 rounded-full text-xs font-bold leading-tight shadow-sm border border-red-100 max-w-full">
+                    <span className="line-clamp-2 italic">
+                      "{flag.flagged_text}"
+                    </span>
+                  </div>
                 </div>
 
                 <div className="order-2 md:order-none col-span-1 md:col-span-1 flex justify-end md:justify-center">

@@ -15,6 +15,7 @@ class AdminSafetyFlagsView(APIView):
                 "id": flag.id,
                 "user_name": flag.user.username,
                 "user_email": flag.user.email,
+                "flagged_text": flag.flagged_text,
                 "matched_phrases": flag.matched_phrases,
                 "risk_level": flag.risk_level,
                 "timestamp": flag.timestamp

@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.parsers import FormParser, MultiPartParser
-
+from channels.layers import get_channel_layer
 from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
 from .serializers import (
     JournalEntrySerializer, UserMoodSerializer,
@@ -17,8 +17,10 @@ from .services import analyze_mood, embed_drawing, get_drawing_emotional_analysi
 
 from safety.services import check_journal
 from safety.ai_utils import get_llama_response
+from safety.models import SafetyFlag
 from wellness.services import embed_drawing
-
+from asgiref.sync import async_to_sync
+import re
 
 def _save_mood(entry):
     result, raw = analyze_mood(entry.content)
@@ -33,6 +35,34 @@ def _save_mood(entry):
         },
     )
 
+
+def get_smart_snippet(full_text, matched_phrase, window=50):
+    """
+    Finds the best part of the student's actual text to show in the pill.
+    """
+    text_lower = full_text.lower()
+
+    # 1. Try to find the first word of the matched phrase (e.g., "kill")
+    # This is usually the strongest part of the trigger.
+    trigger_words = matched_phrase.lower().split()
+    search_word = trigger_words[2] if len(trigger_words) > 2 else trigger_words[0]
+
+    start_index = text_lower.find(search_word)
+
+    # 2. If we can't find that word, just take the first part of their message
+    if start_index == -1:
+        return full_text[:window*2] + "..."
+
+    # 3. Calculate the window around the actual word found in the student's text
+    start_pos = max(0, start_index - window)
+    end_pos = min(len(full_text), start_index + len(search_word) + window)
+
+    snippet = full_text[start_pos:end_pos]
+
+    if start_pos > 0: snippet = "..." + snippet
+    if end_pos < len(full_text): snippet = snippet + "..."
+
+    return snippet
 
 # journal
 
@@ -61,7 +91,30 @@ class JournalListCreateView(generics.ListCreateAPIView):
                 is_flagged=True
             )
 
+            display_text = get_smart_snippet(content, matched_phrase)
+
+
+
+            print(f"DEBUG: Saving this to the pill: {display_text}")
+
+            SafetyFlag.objects.create(
+                user=request.user,
+                flagged_text=display_text,
+                matched_phrases=[matched_phrase] if matched_phrase else [],
+                risk_level="High"
+            )
             _save_mood(entry)
+
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "guidance_alerts",
+                {
+                    "type": "safety_alert",
+                    "status": "high_risk",
+                    "user": request.user.username,
+                    "message": "New flagged journal entry!"
+                }
+            )
 
             return Response({
                 'status': 'high_risk',
@@ -115,6 +168,18 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         if is_dangerous:
             entry = serializer.save(is_flagged=True)
+
+            display_text = get_smart_snippet(content, matched_phrase)
+
+            print(f"DEBUG: Saving this to the pill: {display_text}")
+
+
+            SafetyFlag.objects.create(
+                user=request.user,
+                flagged_text=display_text,
+                matched_phrases=[matched_phrase] if matched_phrase else [],
+                risk_level="High"
+            )
             _save_mood(entry)
 
             return Response({
@@ -216,7 +281,7 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64","")
         embedding = embed_drawing(image_b64) if image_b64 else None
-        
+
         # Get emotional analysis if image exists
         emotional_analysis = None
         if image_b64:
@@ -226,7 +291,7 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
                     emotional_analysis = {"analysis": analysis_text}
             except Exception as e:
                 print(f"Emotional analysis failed: {e}")
-        
+
         serializer.save(user=self.request.user, embedding=embedding, emotional_analysis=emotional_analysis)
 
 
@@ -240,7 +305,7 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64", "")
         embedding = embed_drawing(image_b64) if image_b64 else None
-        
+
         # Get emotional analysis if image exists
         emotional_analysis = serializer.instance.emotional_analysis
         if image_b64:
@@ -250,7 +315,7 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
                     emotional_analysis = {"analysis": analysis_text}
             except Exception as e:
                 print(f"Emotional analysis failed: {e}")
-        
+
         serializer.save(embedding=embedding, emotional_analysis=emotional_analysis)
 
 class StudentTrackListCreateView(generics.ListCreateAPIView):
