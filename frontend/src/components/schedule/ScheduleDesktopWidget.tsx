@@ -260,16 +260,52 @@ const ScheduleDesktopWidget: React.FC = () => {
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-[#d0e6ff] opacity-80 z-20 shadow-sm rounded-sm" />
 
             <div className="w-full border-2 border-dashed border-[#c0d4ed] rounded-[32px] p-8 md:p-10 relative bg-white/40 group">
-              <p className="text-[#9db7e0] font-bold text-xl mb-4">
-                Sticky Note:
-              </p>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-[#9db7e0] font-bold text-xl">
+                  Sticky Note:
+                </p>
+                <button
+                  onClick={() => {
+                    const newNotes = [...notes];
+                    newNotes.splice(index, 1);
+                    setNotes(newNotes);
+                  }}
+                  className="text-[#9db7e0] hover:text-[#4b8df2] hover:bg-white/50 p-2 rounded-full transition-colors duration-200"
+                  aria-label="Delete Note"
+                  title="Delete Note"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
 
               <textarea
-                className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-hidden h-24 placeholder:text-[#c0d4ed]"
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = "auto";
+                    el.style.height = `${el.scrollHeight}px`;
+                  }
+                }}
+                className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-y-auto min-h-[6rem] max-h-[200px] placeholder:text-[#c0d4ed]"
                 value={note}
                 onChange={(e) => {
+                  const target = e.target;
+                  target.style.height = "auto";
+                  target.style.height = `${target.scrollHeight}px`;
                   const newNotes = [...notes];
-                  newNotes[index] = e.target.value;
+                  newNotes[index] = target.value;
                   setNotes(newNotes);
                 }}
                 placeholder="Type your note here..."
