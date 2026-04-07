@@ -211,6 +211,7 @@ export default function SketchbookCanvas() {
   const [isSaving,     setIsSaving]     = useState<boolean>(false);
   const [saveError,    setSaveError]    = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
+  const [emotionalAnalysis, setEmotionalAnalysis] = useState<any>(null);
 
 
   // Refs that don't need to trigger re-renders 
@@ -384,6 +385,12 @@ export default function SketchbookCanvas() {
 
       if(!result || typeof result.id !== 'number') {
         throw new Error('Invalid response from server');
+      }
+
+      // Extract emotional analysis if available
+      if (result.emotional_analysis) {
+        setEmotionalAnalysis(result.emotional_analysis);
+        console.log('[DEBUG] Emotional analysis:', result.emotional_analysis);
       }
 
       // Update the drawing ID if this was a new drawing
@@ -1014,9 +1021,50 @@ export default function SketchbookCanvas() {
                   <p className="text-[12px] text-red-500 font-medium">{saveError}</p>
                 )}
 
+                {/* Emotional Analysis Display */}
+                {emotionalAnalysis && (
+                  <div className="mt-2 p-3 rounded-xl bg-gradient-to-br from-[rgba(201,184,240,.15)] to-[rgba(240,184,216,.15)] border border-[rgba(180,140,220,.2)]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">✨</span>
+                      <span className="text-[11px] uppercase font-bold tracking-widest text-[#6b5b95]">Emotional Insight</span>
+                    </div>
+                    
+                    {/* Mood Label */}
+                    <div className="mb-2">
+                      <p className="text-[12px] text-[#7b6ba5] font-semibold mb-1">Mood Detected</p>
+                      <div className="inline-block px-3 py-1.5 rounded-lg bg-[#c9b8f0] text-white font-bold text-sm capitalize">
+                        {emotionalAnalysis.mood_label || 'Unknown'}
+                      </div>
+                    </div>
+                    
+                    {/* Confidence */}
+                    {typeof emotionalAnalysis.confidence === 'number' && (
+                      <div className="mb-2">
+                        <div className="flex justify-between items-center mb-1">
+                          <p className="text-[11px] text-[#7b6ba5] font-semibold">Confidence</p>
+                          <p className="text-[11px] text-[#9b8ab4] font-medium">{(emotionalAnalysis.confidence * 100).toFixed(0)}%</p>
+                        </div>
+                        <div className="h-1.5 bg-[rgba(180,140,220,.2)] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-[#c9b8f0] to-[#f0b8d8] rounded-full transition-all"
+                            style={{ width: `${emotionalAnalysis.confidence * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Summary */}
+                    {emotionalAnalysis.summary && (
+                      <p className="text-[12px] text-[#6b5b95] leading-relaxed italic">
+                        "{emotionalAnalysis.summary}"
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-2 justify-end">
                   <button
-                    onClick={()=>{ setShowSaveModal(false); setSaveError(null); setDrawingTitle(''); }}
+                    onClick={()=>{ setShowSaveModal(false); setSaveError(null); setDrawingTitle(''); setEmotionalAnalysis(null); }}
                     disabled={isSaving}
                     className="px-4 py-1.5 rounded-xl text-xs font-semibold text-[#9b8ab4] hover:bg-[rgba(180,140,220,.1)] transition-all cursor-pointer disabled:opacity-50">
                     Cancel
