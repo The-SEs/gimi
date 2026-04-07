@@ -11,7 +11,7 @@ from .serializers import (
     JournalEntrySerializer, UserMoodSerializer,
     DailyMoodSerializer, VectorDrawingSerializer,
 )
-from .services import analyze_mood
+from .services import analyze_mood, embed_drawing, get_drawing_emotional_analysis
 
 from safety.services import check_journal
 from safety.ai_utils import get_llama_response
@@ -213,7 +213,18 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64","")
         embedding = embed_drawing(image_b64) if image_b64 else None
-        serializer.save(user=self.request.user, embedding=embedding)
+        
+        # Get emotional analysis if image exists
+        emotional_analysis = None
+        if image_b64:
+            try:
+                analysis_text = get_drawing_emotional_analysis(image_b64)
+                if analysis_text:
+                    emotional_analysis = {"analysis": analysis_text}
+            except Exception as e:
+                print(f"Emotional analysis failed: {e}")
+        
+        serializer.save(user=self.request.user, embedding=embedding, emotional_analysis=emotional_analysis)
 
 
 class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -226,6 +237,17 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64", "")
         embedding = embed_drawing(image_b64) if image_b64 else None
-        serializer.save(embedding=embedding)
+        
+        # Get emotional analysis if image exists
+        emotional_analysis = serializer.instance.emotional_analysis
+        if image_b64:
+            try:
+                analysis_text = get_drawing_emotional_analysis(image_b64)
+                if analysis_text:
+                    emotional_analysis = {"analysis": analysis_text}
+            except Exception as e:
+                print(f"Emotional analysis failed: {e}")
+        
+        serializer.save(embedding=embedding, emotional_analysis=emotional_analysis)
 
 

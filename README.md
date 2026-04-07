@@ -76,6 +76,22 @@ The backend API will be available at 'http://127.0.0.1:8000/'.
 
 ---
 
+### ⚡ Drawing Emotional Analysis (Optional if you want to run ollama in your pc)
+
+GIMI includes AI-powered emotional analysis of student drawings using local Ollama LLM.
+
+**Setup:**
+1. Install Ollama from [ollama.ai](https://ollama.ai)
+2. Start Ollama: `ollama serve`
+3. Pull models: `ollama pull llava && ollama pull llama3.2`
+4. Test the pipeline: `python manage.py test_drawing_analysis`
+
+See [backend/wellness/DRAWING_ANALYSIS_GUIDE.md](backend/wellness/DRAWING_ANALYSIS_GUIDE.md) for detailed setup and troubleshooting.
+
+When enabled, students' drawings are automatically analyzed for emotional content and displayed with mood labels in the canvas interface.
+
+---
+
 ### 2. Frontend Setup (React)
 
 Open a **new** terminal session to set up and run the React application.

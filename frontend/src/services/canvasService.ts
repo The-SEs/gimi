@@ -10,6 +10,7 @@ interface DrawingData {
 
 interface Drawing extends DrawingData {
   id: number;
+  emotional_analysis?: { analysis: string } | null;
   created_at: string;
   updated_at: string;
 }

@@ -82,6 +82,7 @@ class VectorDrawing(models.Model):
     canvas_data = models.JSONField(default=dict)
     image_b64 = models.TextField(blank=True)
     embedding = VectorField(dimensions=512, null=True, blank=True)
+    emotional_analysis = models.JSONField(null=True, blank=True)  # LLM emotional analysis
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
