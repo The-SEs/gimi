@@ -133,12 +133,14 @@ class JournalListCreateTests(BaseTestCase):
 
     def test_unauthenticated_user_cannot_create_journal(self):
         """Unauthenticated requests must be rejected with 401."""
+        self.client.logout()
         self.client.credentials()
         response = self.client.post(self.url, {"content": "Should fail."})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_unauthenticated_user_cannot_list_journals(self):
         """Unauthenticated requests must be rejected with 401."""
+        self.client.logout()
         self.client.credentials()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -343,18 +345,20 @@ class DailyMoodListCreateTests(BaseTestCase):
         """The date field must be auto-set to today and not overridable by the client."""
         response = self.client.post(self.url, {"state": "HP", "date": "2000-01-01"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["date"], timezone.now().date().isoformat())
+        self.assertEqual(response.data["date"], timezone.localdate().isoformat())
 
     # ── auth ──────────────────────────────────────────────────────────────────
 
     def test_unauthenticated_user_cannot_log_mood(self):
         """Unauthenticated requests must be rejected with 401."""
+        self.client.logout()
         self.client.credentials()
         response = self.client.post(self.url, {"state": "HP"})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_unauthenticated_user_cannot_list_moods(self):
         """Unauthenticated requests must be rejected with 401."""
+        self.client.logout()
         self.client.credentials()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

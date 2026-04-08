@@ -74,7 +74,7 @@ class JournalListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
+        return [permissions.IsAuthenticated(), (IsStudent | IsCounselor | IsAdminRole)()]
 
     def get_queryset(self):
         user = self.request.user
@@ -286,7 +286,7 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
+        return [permissions.IsAuthenticated(), (IsStudent | IsCounselor | IsAdminRole)()]
 
     def get_queryset(self):
         user = self.request.user
@@ -305,18 +305,15 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         state = serializer.validated_data["state"]
         user = request.user
-        today = timezone.now().date()
+        
+        today = timezone.localdate()
 
         with transaction.atomic():
-            # Lock the row if it exists to prevent concurrent inserts
-            obj, created = DailyMood.objects.select_for_update().get_or_create(
+            obj, created = DailyMood.objects.update_or_create(
                 user=user,
                 date=today,
                 defaults={"state": state}
             )
-            if not created:
-                obj.state = state
-                obj.save(update_fields=["state"])
 
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(DailyMoodSerializer(obj).data, status=status_code)
@@ -331,7 +328,7 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
+        return [permissions.IsAuthenticated(), (IsStudent | IsCounselor | IsAdminRole)()]
 
     def get_queryset(self):
         user = self.request.user
@@ -364,7 +361,7 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
+        return [permissions.IsAuthenticated(), (IsStudent | IsCounselor | IsAdminRole)()]
 
     def get_queryset(self):
         user = self.request.user
@@ -398,7 +395,7 @@ class StudentTrackListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
+        return [permissions.IsAuthenticated(), (IsStudent | IsCounselor | IsAdminRole)()]
 
     def get_queryset(self):
         user = self.request.user
