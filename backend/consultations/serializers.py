@@ -34,17 +34,21 @@ class ConsultationSerializer(serializers.ModelSerializer):
         if value < timezone.now():
             raise serializers.ValidationError(
                 "Appointments cannot be scheduled in the past."
-            )
+        )
 
-        local_time = timezone.localtime(value).time()
+        local_dt = timezone.localtime(value)
+
+        local_time = time(local_dt.hour, local_dt.minute)
+
+        
         if local_time not in ALLOWED_TIMES:
             raise serializers.ValidationError(
                 "Invalid time slot. Allowed times are 8:30 AM, 9:00 AM, 10:00 AM, 11:00 AM, 12:00 PM, 1:00 PM, 2:00 PM, 3:00 PM, and 4:30 PM."
-            )
+        )
 
         queryset = Consultation.objects.filter(requested_date=value)
         if self.instance:
-            queryset = queryset.exlude(pk=self.instance.pk)
+            queryset = queryset.exclude(pk=self.instance.pk)
 
         if queryset.exists():
             raise serializers.ValidationError(

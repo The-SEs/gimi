@@ -108,8 +108,17 @@ export default function Consulation() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedDate || !selectedTime || !selectedMode) {
+    if (!selectedDate && !selectedTime && !selectedMode) {
       alert("Please select a date, time, and mode of consultation.");
+      return;
+    } else if (!selectedDate) {
+      alert("Please select a date.");
+      return;
+    } else if (!selectedTime) {
+      alert("Please select a time.");
+      return;
+    } else if (!selectedMode) {
+      alert("Please select a mode of consultation.");
       return;
     }
 
@@ -133,7 +142,7 @@ export default function Consulation() {
 
       setSelectedDate(null);
       setSelectedTime(null);
-      setSelectedMode(nul);
+      setSelectedMode(null);
       setReason("");
     } catch (error) {
       console.error("Failed to schedule consultation:", error);
@@ -414,7 +423,7 @@ export default function Consulation() {
             <div className="shrink-0 p-6 md:p-8 pt-4 md:pt-4 bg-white border-t border-gray-100 md:border-none">
               <button
                 onClick={handleSubmit}
-                disbaled={isSubmitting}
+                disabled={isSubmitting}
                 className={`w-full text-white font-extrabold text-xl py-4 rounded-full transition-colors ${
                   isSubmitting
                     ? "bg-gray-400"
