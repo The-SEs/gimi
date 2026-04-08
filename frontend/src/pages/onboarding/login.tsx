@@ -35,7 +35,13 @@ export default function LoginPage() {
         localStorage.setItem("access_token", response.access)
       }
 
-      navigate("/dashboard")
+      const userRole = String(response?.user?.role || "").toUpperCase();
+
+      if (userRole === "STUDENT") {
+        navigate("/dashboard");
+      } else {
+        navigate("/admin/dashboard");
+      }
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
         const data = err.response.data as ApiError

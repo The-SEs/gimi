@@ -24,7 +24,7 @@ export default function RoleProtectedRoute({ children, allowedRoles }: RoleProte
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  const userRole = auth.user.role as UserRole;
+  const userRole = String(auth.user.role || "").toUpperCase() as UserRole;
 
   if (!allowedRoles.includes(userRole)) {
     if (userRole === "STUDENT") {

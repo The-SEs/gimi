@@ -90,6 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accessToken: data.access,
         status: "authenticated",
       });
+
+      return { access: data.access, user}
     } catch (err) {
       setState((s) => ({ ...s, status: "unauthenticated" }));
       throw err; // re-throw so LoginPage can show the error
@@ -139,6 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accessToken: data.access,
         status: "authenticated",
       });
+
+      return { access: data.access, user}
     } catch (err) {
       setState((s) => ({ ...s, status: "unauthenticated" }));
       throw err;

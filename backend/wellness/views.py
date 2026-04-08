@@ -21,6 +21,7 @@ from safety.models import SafetyFlag
 from wellness.services import embed_drawing
 from asgiref.sync import async_to_sync
 import re
+from users.permissions import IsStudent, IsCounselor, IsAdminRole
 
 def _save_mood(entry):
     result, raw = analyze_mood(entry.content)
@@ -64,25 +65,32 @@ def get_smart_snippet(full_text, matched_phrase, window=50):
 
     return snippet
 
-# journal
+# =======================================================
+# Journal
+# =======================================================
 
 class JournalListCreateView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = JournalEntrySerializer
 
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.IsAuthenticated(), IsStudent()]
+        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+
     def get_queryset(self):
-        return JournalEntry.objects.filter(user=self.request.user).select_related("mood")
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            return JournalEntry.objects.all().select_related("mood", "user")
+        return JournalEntry.objects.filter(user=user).select_related("mood")
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # Grab raw text
         content = serializer.validated_data.get('content', '')
 
         if not content:
             raise ValidationError({"content": "Journal cannot be empty"})
 
-        # Run interceptor
         is_dangerous, matched_phrase, distance = check_journal(content)
 
         if is_dangerous:
@@ -92,8 +100,6 @@ class JournalListCreateView(generics.ListCreateAPIView):
             )
 
             display_text = get_smart_snippet(content, matched_phrase)
-
-
 
             print(f"DEBUG: Saving this to the pill: {display_text}")
 
@@ -142,14 +148,19 @@ class JournalListCreateView(generics.ListCreateAPIView):
             }, status=status.HTTP_201_CREATED)
 
 
-
-
 class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = JournalEntrySerializer
 
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [permissions.IsAuthenticated(), IsStudent()]
+        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+
     def get_queryset(self):
-        return JournalEntry.objects.filter(user=self.request.user).select_related("mood")
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            return JournalEntry.objects.all().select_related("mood", "user")
+        return JournalEntry.objects.filter(user=user).select_related("mood")
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -157,13 +168,11 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
-        # Get the new content the user is trying to save
         content = serializer.validated_data.get('content', instance.content)
 
         if not content:
             raise ValidationError({"content": "Journal cannot be empty"})
 
-        # 1. Run the safety interceptor on the updated text
         is_dangerous, matched_phrase, distance = check_journal(content)
 
         if is_dangerous:
@@ -172,7 +181,6 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
             display_text = get_smart_snippet(content, matched_phrase)
 
             print(f"DEBUG: Saving this to the pill: {display_text}")
-
 
             SafetyFlag.objects.create(
                 user=request.user,
@@ -186,11 +194,10 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'status': 'high_risk',
                 'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
                 'id': entry.id,
-                **serializer.data # <-- Sends back the full entry data for React
+                **serializer.data 
             }, status=status.HTTP_200_OK)
 
         else:
-            # 2. Get the new AI response if it is safe
             ai_reply = get_llama_response(content)
 
             entry = serializer.save(
@@ -204,55 +211,96 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'message': 'Journal updated successfully',
                 'ai_response': ai_reply,
                 'id': entry.id,
-                **serializer.data # <-- Sends back the full entry data for React
+                **serializer.data
             }, status=status.HTTP_200_OK)
 
 
-# mood analyzed by ai from journal
+# =======================================================
+# Mood analyzed by AI from journal
+# =======================================================
 
 class MoodListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserMoodSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
-        return UserMood.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            student_id = self.request.query_params.get('student_id')
+            if student_id:
+                return UserMood.objects.filter(user__id=student_id)
+            return UserMood.objects.all()
+        return UserMood.objects.filter(user=user)
 
 
 class MoodDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserMoodSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
-        return UserMood.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            return UserMood.objects.all()
+        return UserMood.objects.filter(user=user)
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, IsStudent | IsCounselor | IsAdminRole])
 def mood_latest(request):
-    mood = UserMood.objects.filter(user=request.user).first()
+    if request.user.role in ['ADMIN', 'COUNSELOR']:
+        student_id = request.query_params.get('student_id')
+        if student_id:
+            mood = UserMood.objects.filter(user__id=student_id).order_by('-id').first()
+        else:
+            return Response({"detail": "Please provide a student_id parameter."}, status=400)
+    else:
+        mood = UserMood.objects.filter(user=request.user).order_by('-id').first()
+
     if not mood:
         return Response({"detail": "No mood data yet."}, status=404)
     return Response(UserMoodSerializer(mood).data)
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, IsStudent | IsCounselor | IsAdminRole])
 def mood_summary(request):
-    moods = UserMood.objects.filter(user=request.user)
+    if request.user.role in ['ADMIN', 'COUNSELOR']:
+        student_id = request.query_params.get('student_id')
+        if student_id:
+            moods = UserMood.objects.filter(user__id=student_id)
+        else:
+            return Response({"detail": "Please provide a student_id parameter."}, status=400)
+    else:
+        moods = UserMood.objects.filter(user=request.user)
+        
     breakdown = moods.values("mood_label").annotate(count=Count("id")).order_by("-count")
     return Response({"total": moods.count(), "breakdown": list(breakdown)})
 
 
-# daily Mood (manual log)
+# =======================================================
+# Daily Mood (manual log)
+# =======================================================
+
 class DailyMoodListCreateView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = DailyMoodSerializer
 
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.IsAuthenticated(), IsStudent()]
+        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+
     def get_queryset(self):
-        return DailyMood.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            student_id = self.request.query_params.get('student_id')
+            if student_id:
+                return DailyMood.objects.filter(user__id=student_id)
+            return DailyMood.objects.all()
+        return DailyMood.objects.filter(user=user)
 
     def perform_create(self, serializer):
         pass
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -268,21 +316,31 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
         return Response(output.data, status=status_code)
 
 
-# vector drawing
+# =======================================================
+# Vector Drawing
+# =======================================================
 
 class VectorDrawingListCreateView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = VectorDrawingSerializer
 
-    def get_queryset(self):
-        return VectorDrawing.objects.filter(user=self.request.user)
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.IsAuthenticated(), IsStudent()]
+        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
 
-    #Adding extra stuff for drawing embeddings
+    def get_queryset(self):
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            student_id = self.request.query_params.get('student_id')
+            if student_id:
+                return VectorDrawing.objects.filter(user__id=student_id)
+            return VectorDrawing.objects.all()
+        return VectorDrawing.objects.filter(user=user)
+
     def perform_create(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64","")
         embedding = embed_drawing(image_b64) if image_b64 else None
 
-        # Get emotional analysis if image exists
         emotional_analysis = None
         if image_b64:
             try:
@@ -296,17 +354,23 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
 
 
 class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = VectorDrawingSerializer
 
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [permissions.IsAuthenticated(), IsStudent()]
+        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+
     def get_queryset(self):
-        return VectorDrawing.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            return VectorDrawing.objects.all()
+        return VectorDrawing.objects.filter(user=user)
 
     def perform_update(self, serializer):
         image_b64 = serializer.validated_data.get("image_b64", "")
         embedding = embed_drawing(image_b64) if image_b64 else None
 
-        # Get emotional analysis if image exists
         emotional_analysis = serializer.instance.emotional_analysis
         if image_b64:
             try:
@@ -318,39 +382,47 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         serializer.save(embedding=embedding, emotional_analysis=emotional_analysis)
 
+# =======================================================
+# Student Tracks (Music)
+# =======================================================
+
 class StudentTrackListCreateView(generics.ListCreateAPIView):
     serializer_class = StudentTrackSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
     parser_classes = [MultiPartParser, FormParser]
 
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.IsAuthenticated(), IsStudent()]
+        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+
     def get_queryset(self):
-        # return music belonging to logged in user
-        return StudentTrack.objects.filter(user=self.request.user).order_by('created_at')
+        user = self.request.user
+        if user.role in ['ADMIN', 'COUNSELOR']:
+            student_id = self.request.query_params.get('student_id')
+            if student_id:
+                return StudentTrack.objects.filter(user__id=student_id).order_by('created_at')
+            return StudentTrack.objects.all().order_by('created_at')
+        return StudentTrack.objects.filter(user=user).order_by('created_at')
 
     def perform_create(self, serializer):
-        # automatically attach logged in user to new song
         serializer.save(user=self.request.user)
 
 class StudentTrackDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
 
     def delete(self, request, pk):
         print(f"\n🔥 --- NUCLEAR DELETE TRIGGERED FOR ID: {pk} --- 🔥")
 
-        # 1. Blindly check if it exists AT ALL in the entire database
         track = StudentTrack.objects.filter(id=pk).first()
 
         if not track:
             print("🚨 VERDICT: Ghost Track! It is completely missing from the database.")
             return Response({"error": "Track not found"}, status=404)
 
-        # 2. Check if Matty actually owns it
         if track.user != request.user:
             print(f"🚨 VERDICT: Ownership mismatch! Song belongs to User ID {track.user.id}, but you are User ID {request.user.id}")
             return Response({"error": "Not your song!"}, status=403)
 
-        # 3. If it passes both tests, destroy it
         print("✅ VERDICT: Song found and verified. Deleting now...")
         track.delete()
         return Response({"success": "Deleted!"}, status=204)
