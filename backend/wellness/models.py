@@ -97,7 +97,7 @@ class VectorDrawing(models.Model):
 class StudentTrack(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='music_tracks')
     title = models.CharField(max_length=200)
-    audio_file = models.FileField(upload_to='music/', null=True, blank=True)
+    audio_file = models.FileField(upload_to='tracks/%Y/%m/%d/')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
