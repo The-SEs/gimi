@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     accessToken: null,
-    status: "idle", // "idle" = we haven't checked the session yet
+    status: "idle",
   });
 
   // We need a stable ref to refreshAccessToken so the token-expired event
@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (result) {
         setAccessToken(result.access);
-        // Fetch the user profile now that we have a valid access token
         try {
           const { api } = await import("../services/api");
           const { data: user } = await api.get("/api/auth/user/");
@@ -52,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             status: "authenticated",
           });
         } catch {
-          // Token was valid but /me/ failed — fall through to unauthenticated
           setAccessToken(null);
           setState({
             user: null,
@@ -92,6 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accessToken: data.access,
         status: "authenticated",
       });
+
+      return { access: data.access, user}
     } catch (err) {
       setState((s) => ({ ...s, status: "unauthenticated" }));
       throw err; // re-throw so LoginPage can show the error
@@ -141,6 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         accessToken: data.access,
         status: "authenticated",
       });
+
+      return { access: data.access, user}
     } catch (err) {
       setState((s) => ({ ...s, status: "unauthenticated" }));
       throw err;

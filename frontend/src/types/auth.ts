@@ -3,11 +3,13 @@
 
 // User
 export type AuthProvider = "email" | "google";
+export type UserRole = "ADMIN" | "COUNSELOR" | "NURSE" | "SECURITY" | "STUDENT";
 
 export interface User {
   id: number;
   email: string;
   username: string;
+  role: UserRole;
   is_staff: boolean;
   date_joined: string;
   provider: AuthProvider;

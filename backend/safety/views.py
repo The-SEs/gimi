@@ -1,5 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from users.permissions import IsAdminRole, IsCounselor
+from .models import SafetyFlag
 from rest_framework.permissions import IsAdminUser
 from django.db.models import Count, Q
 from .models import (
@@ -8,7 +10,7 @@ from .models import (
 )
 
 class AdminSafetyFlagsView(APIView):
-    # persmission_classes = [IsAdminUser]
+    persmission_classes = [IsAdminRole, IsCounselor]
 
     def get(self, request):
         flags = SafetyFlag.objects.select_related('user').order_by('-timestamp')

@@ -4,11 +4,13 @@ from dj_rest_auth.registration.views import SocialLoginView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser, PasswordResetCode
-# Create your views here.
+from .permissions import IsStudent, IsNurse, IsSecurity, IsCounselor, IsAdminRole
 
+# Create your views here.
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
@@ -65,3 +67,16 @@ class ResetPasswordView(APIView):
             return Response({"error": "Code has expired."}, status=status.HTTP_400_BAD_REQUEST)
         except (CustomUser.DoesNotExist, PasswordResetCode.DoesNotExist):
             return Response({"error": "Invalid code."}, status=status.HTTP_400_BAD_REQUEST)
+
+class NurseDashboardDataView(APIView):
+    permission_classes = [IsAuthenticated, IsNurse]
+
+    def get(self, request):
+        return Response({"detail": "Secure nurse data accessed."}, status=status.HTTP_200_OK)
+
+
+class StudentProfileView(APIView):
+    permission_classes = [IsAuthenticated, IsStudent]
+
+    def get(self, request):
+        return Response({"detail": "Student profile data."}, status=status.HTTP_200_OK)

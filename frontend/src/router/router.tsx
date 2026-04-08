@@ -17,6 +17,7 @@ import AdminLayout from "../layout/adminLayout.tsx";
 import AdminDashboard from "../pages/admin/dashboard.tsx";
 import ForgotPasswordPage from "../pages/onboarding/forgot_password.tsx";
 import ResourcesPage from "../pages/resources/resources.tsx";
+import RoleProtectedRoute from "../components/auth/RoleProtectedRoute.tsx";
 
 const RegisterWrapper = () => {
   const navigate = useNavigate();
@@ -24,58 +25,99 @@ const RegisterWrapper = () => {
 };
 
 export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <LoginPage />,
-  },
-  {
-    path: "/dashboard",
-    element: <MainLayout />,
-    children: [{ path: "/dashboard", element: <DashboardPage /> }],
-  },
-  {
-    path: "/journal",
-    element: <MainLayout />,
-    children: [{ path: "/journal", element: <JournalPage /> }],
-  },
-  {
-    path: "/canvas",
-    element: <MainLayout />,
-    children: [{ path: "", element: <CanvasPage /> }],
-  },
-  {
-    path: "/register",
-    element: <RegisterWrapper />,
-  },
-  {
-    path: "/disclaimers",
-    element: <DisclaimersPage />,
-  },
-  {
-    path: "/onboarding-questions",
-    element: <OnboardingQuestions />,
-  },
-    {
-    path: "/forgot-password",
-    element: <ForgotPasswordPage />,
-  },
-  {
-    path: "/resources",
-    element: <MainLayout />,
-    children: [{ path: "", element: <ResourcesPage /> }],
-  },
-  // ONLY FOR TESTING. PLEASE MOVE EVENTUALLY.
+  // ====================
+  // PUBLIC 
+  // ====================
+  { path: "/", element: <LoginPage />},
+  { path: "/register", element: <RegisterWrapper />},
+  { path: "/forgot-password", element: <ForgotPasswordPage />},
+  { path: "/disclaimers", element: <DisclaimersPage />},
+
+  // ====================
+  // STUDENT
+  // ====================
   {
     path: "/chat",
     element: <ChatTestPage />,
   },
   {
+    path: "/onboarding-questions",
+    element: (
+      <RoleProtectedRoute allowedRoles={["STUDENT"]}>
+        <OnboardingQuestions />
+      </RoleProtectedRoute>
+    ),
+  },
+  {
+    path: "/",
+    element: <MainLayout />,
+    children: [
+      { 
+        path: "dashboard", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["STUDENT"]}>
+            <DashboardPage />
+          </RoleProtectedRoute>
+        ) 
+      },
+      { 
+        path: "journal", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["STUDENT"]}>
+            <JournalPage />
+          </RoleProtectedRoute>
+        ) 
+      },
+      { 
+        path: "canvas", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["STUDENT"]}>
+            <CanvasPage />
+          </RoleProtectedRoute>
+        ) 
+      },
+      { 
+        path: "resources", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["STUDENT"]}>
+            <ResourcesPage />
+          </RoleProtectedRoute>
+        ) 
+      },
+    ],
+  },
+
+  // ====================
+  // ADMIN (NURSE, SECURITY, COUNSELOR)
+  // ====================
+  {
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      { path: "/admin/dashboard", element: <AdminDashboard /> },
-      { path: "/admin/security", element: <SecurityAdminPage /> },
-      { path: "/admin/nurse", element: <NurseAdminPage /> },
+      { 
+        path: "dashboard", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["ADMIN", "COUNSELOR", "NURSE"]}>
+            <AdminDashboard />
+          </RoleProtectedRoute>
+        ) 
+      },
+      { 
+        path: "nurse", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["ADMIN", "COUNSELOR", "NURSE"]}>
+            <NurseAdminPage />
+          </RoleProtectedRoute>
+        ) 
+      },
+      { 
+        path: "security", 
+        element: (
+          <RoleProtectedRoute allowedRoles={["ADMIN", "COUNSELOR", "NURSE", "SECURITY"]}>
+            <SecurityAdminPage />
+          </RoleProtectedRoute>
+        ) 
+      },
     ],
   },
 ]);
