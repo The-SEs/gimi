@@ -25,6 +25,7 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, username, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("role", CustomUser.Role.ADMIN)
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -35,14 +36,27 @@ class CustomUserManager(BaseUserManager):
 
 
 # Inherit from AbstractBaseUser and PermissionsMixin instead of AbstractUser
-class CustomUser(AbstractBaseUser, PermissionsMixin):  # type: ignore
+class CustomUser(AbstractBaseUser, PermissionsMixin):  
+    class Role(models.TextChoices):
+        STUDENT = "STUDENT", "Student"
+        NURSE = "NURSE", "Nurse"
+        SECURITY = "SECURITY", "Security"
+        COUNSELOR = "COUNSELOR", "Counselor"
+        ADMIN = "ADMIN", "Admin"
+
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, unique=True)
 
+    role = models.CharField(
+            max_length=20,
+            choices=Role.choices,
+            default=Role.STUDENT
+    )
+
     # These three fields are required for Django's
     # built-in admin and auth system to function
-    is_staff = models.BooleanField(default=False)  # type: ignore
-    is_active = models.BooleanField(default=True)  # type: ignore
+    is_staff = models.BooleanField(default=False) 
+    is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
 
     USERNAME_FIELD = "email"
@@ -51,8 +65,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # type: ignore
 
     objects = CustomUserManager()
 
-    def __str__(self):  # type: ignore
-        return self.email
+    def __str__(self):
+        return f"{self.email} ({self.get_role_display()})"
 
 class PasswordResetCode(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)

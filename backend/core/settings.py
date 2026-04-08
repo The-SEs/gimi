@@ -128,7 +128,6 @@ SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
             "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-            # Make sure this matches exactly what you named it in your .env file!
             "secret": os.getenv("GOOGLE_SECRET_KEY"),
             "key": "",
         },
@@ -178,7 +177,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_LOGIN_METHODS = {'email'}
 SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = "none"
 

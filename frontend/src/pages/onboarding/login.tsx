@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import { isAxiosError } from "axios"
 import { useAuth } from "../../hooks/useAuth"
 import type { ApiError } from "../../types/auth"
@@ -8,7 +8,7 @@ import GimiIcon from "../../assets/GIMI_Icon.svg"
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login, loginWithGoogle, status } = useAuth()
+  const { login, loginWithGoogle, status, user } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
   const isSubmitting = status === "loading" || isGoogleLoading
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
