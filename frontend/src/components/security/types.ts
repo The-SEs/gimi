@@ -15,15 +15,15 @@ export interface EmergencyContact {
 }
 
 export interface StudentSecurityCase {
+  id: string;
   name: string;
+  email: string;
   age: string;
   sex: string;
   pronouns: string;
   studentNumber: string;
-  program: string;
   riskLevel: "HIGH" | "MEDIUM" | "LOW";
   summary: string;
-  lastSeen: string;
   detectedKeywords: string[];
   alertHistory: AlertHistoryItem[];
   emergencyContacts: EmergencyContact[];

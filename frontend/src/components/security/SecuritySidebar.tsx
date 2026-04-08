@@ -8,9 +8,7 @@ interface SecuritySidebarProps {
 
 const buildProfileFacts = (studentCase: StudentSecurityCase) => [
   { label: "Student Num", value: studentCase.studentNumber },
-  { label: "Program", value: studentCase.program },
   { label: "Risk Level", value: studentCase.riskLevel },
-  { label: "Last Seen", value: studentCase.lastSeen },
 ];
 
 export function SecuritySidebar({ studentCase }: SecuritySidebarProps) {
@@ -31,9 +29,7 @@ export function SecuritySidebar({ studentCase }: SecuritySidebarProps) {
 
         <div className="space-y-5 pt-5">
           <p className="max-w-[230px] text-[0.94rem] leading-6 text-[#667180]">
-            Student flagged as{" "}
-            <span className="font-bold text-[#ef4444]">{studentCase.riskLevel} RISK</span> for
-            security monitoring. Recent concerning behavior detected.
+            {studentCase.summary}
           </p>
 
           <div className="flex flex-wrap gap-2">
