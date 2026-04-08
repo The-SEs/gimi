@@ -2,10 +2,10 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
-from safety.models import HighRiskPhrase
+from safety.models import HighRiskPhrase, NurseLogEntry
 from wellness.models import JournalEntry
 from safety.services import check_journal
 from users.models import CustomUser
@@ -61,7 +61,7 @@ class SafetyServiceTests(TestCase):
 
         self.assertTrue(is_dangerous)
         self.assertEqual(phrase, self.risk_phrase.text)
-        self.assertLess(distance, 0.30)  # Changed to 0.30 to match your new services.py threshold
+        self.assertLess(distance, 0.30)
 
 
 class SafetyViewTests(TestCase):
@@ -129,3 +129,80 @@ class SafetyViewTests(TestCase):
         """Test that sending an empty string returns a 400 Bad Request."""
         response = self.client.post(self.url, {"content": ""}, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class NurseLogViewTests(APITestCase):
+    def setUp(self):
+        # Create users with different roles
+        self.student = CustomUser.objects.create_user(
+            email="student_nurse@test.com", username="student_nurse", password="pass", role="STUDENT"
+        )
+        self.nurse = CustomUser.objects.create_user(
+            email="nurse@test.com", username="nurse", password="pass", role="NURSE"
+        )
+        self.counselor = CustomUser.objects.create_user(
+            email="counselor@test.com", username="counselor", password="pass", role="COUNSELOR"
+        )
+        # create_superuser defaults to ADMIN role in your CustomUserManager
+        self.admin = CustomUser.objects.create_superuser(
+            email="admin@test.com", username="admin", password="pass"
+        ) 
+
+        # URL for the specific student's nurse logs (adjust URL pattern if necessary based on your urls.py)
+        self.url = f"/api/safety/admin/nurse-logs/{self.student.id}/"
+
+        # Create a dummy log to fetch
+        NurseLogEntry.objects.create(
+            user=self.student,
+            reason="Fever",
+            admission_time="09:00 AM",
+            observations="Resting in clinic."
+        )
+
+    def test_student_forbidden(self):
+        """Ensure students cannot access or create nurse logs."""
+        self.client.force_authenticate(user=self.student)
+        
+        # GET request
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        # POST request
+        response = self.client.post(self.url, {"reason": "Test"})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_nurse_can_access_and_create(self):
+        """Ensure nurses can fetch and create logs."""
+        self.client.force_authenticate(user=self.nurse)
+        
+        # GET request
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        # POST request
+        data = {
+            "reason": "Headache",
+            "timeOfAdmission": "10:30 AM",
+            "observations": "Provided medicine."
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(NurseLogEntry.objects.count(), 2)
+
+    def test_counselor_can_access_and_create(self):
+        """Ensure counselors can add logs for mental health purposes."""
+        self.client.force_authenticate(user=self.counselor)
+        
+        response = self.client.post(self.url, {
+            "reason": "Anxiety attack",
+            "timeOfAdmission": "11:00 AM",
+            "observations": "Breathing exercises applied."
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_admin_can_access_and_create(self):
+        """Ensure admins have full access."""
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

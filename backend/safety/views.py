@@ -1,8 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from users.permissions import IsAdminRole, IsCounselor
+from users.permissions import IsAdminRole, IsCounselor, IsNurse
 from .models import SafetyFlag
-from rest_framework.permissions import IsAdminUser
 from django.db.models import Count, Q
 from .models import (
     SafetyFlag, EmergencyContact, StudentMedicalInfo, 
@@ -30,6 +29,8 @@ class AdminSafetyFlagsView(APIView):
         return Response(data)
 
 class StudentMedicalInfoView(APIView):
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
+
     def get(self, request, user_id):
         info, _ = StudentMedicalInfo.objects.get_or_create(user_id=user_id)
         return Response({
@@ -48,6 +49,8 @@ class StudentMedicalInfoView(APIView):
         })
 
 class ActiveConditionView(APIView):
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
+
     def get(self, request, user_id):
         conditions = ActiveCondition.objects.filter(user_id=user_id)
         return Response([{
@@ -84,6 +87,8 @@ class ActiveConditionView(APIView):
         return Response(status=204)
 
 class MedicationRecordView(APIView):
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
+
     def get(self, request, user_id):
         meds = MedicationRecord.objects.filter(user_id=user_id)
         return Response([{
@@ -120,6 +125,8 @@ class MedicationRecordView(APIView):
         return Response(status=204)
 
 class HospitalizationHistoryView(APIView):
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
+
     def get(self, request, user_id):
         history = HospitalizationHistory.objects.filter(user_id=user_id)
         return Response([{
@@ -159,6 +166,8 @@ class HospitalizationHistoryView(APIView):
         return Response(status=204)
 
 class NurseLogView(APIView):
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
+
     def get(self, request, user_id):
         logs = NurseLogEntry.objects.filter(user_id=user_id).order_by('-created_at')
         return Response([{
@@ -177,7 +186,7 @@ class NurseLogView(APIView):
         return Response({"status": "saved"}, status=201)
 
 class HighRiskStudentsView(APIView):
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
 
     def get(self, request):
         from django.contrib.auth import get_user_model
