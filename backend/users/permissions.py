@@ -1,6 +1,6 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, OperationHolderMixin
 
-class IsStudent(BasePermission):
+class IsStudent(OperationHolderMixin, BasePermission):
     """Allows access only to users with the STUDENT role."""
     def has_permission(self, request, view):
         return bool(
@@ -9,7 +9,7 @@ class IsStudent(BasePermission):
             request.user.role == 'STUDENT'
         )
 
-class IsNurse(BasePermission):
+class IsNurse(OperationHolderMixin, BasePermission):
     """Allows access only to users with the NURSE role."""
     def has_permission(self, request, view):
         return bool(
@@ -18,7 +18,7 @@ class IsNurse(BasePermission):
             request.user.role == 'NURSE'
         )
 
-class IsSecurity(BasePermission):
+class IsSecurity(OperationHolderMixin, BasePermission):
     """Allows access only to users with the SECURITY role."""
     def has_permission(self, request, view):
         return bool(
@@ -27,7 +27,7 @@ class IsSecurity(BasePermission):
             request.user.role == 'SECURITY'
         )
 
-class IsCounselor(BasePermission):
+class IsCounselor(OperationHolderMixin, BasePermission):
     """Allows access only to users with the COUNSELOR role."""
     def has_permission(self, request, view):
         return bool(
@@ -36,7 +36,7 @@ class IsCounselor(BasePermission):
             request.user.role == 'COUNSELOR'
         )
 
-class IsAdminRole(BasePermission):
+class IsAdminRole(OperationHolderMixin, BasePermission):
     """Allows access only to users with the ADMIN role."""
     def has_permission(self, request, view):
         return bool(

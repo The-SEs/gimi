@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.db.models import Count
-from django.db import IntegrityError
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -20,7 +20,6 @@ from safety.ai_utils import get_llama_response
 from safety.models import SafetyFlag
 from wellness.services import embed_drawing
 from asgiref.sync import async_to_sync
-import re
 from users.permissions import IsStudent, IsCounselor, IsAdminRole
 
 def _save_mood(entry):
@@ -75,7 +74,7 @@ class JournalListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -154,7 +153,7 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+        return [permissions.IsAuthenticated(), (IsStudent | IsCounselor | IsAdminRole)()]
 
     def get_queryset(self):
         user = self.request.user
@@ -287,7 +286,7 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -304,17 +303,23 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        state = serializer.validated_data["state"]
+        user = request.user
+        today = timezone.now().date()
 
-        instance, created = DailyMood.objects.update_or_create(
-            user=request.user,
-            date=timezone.now().date(),
-            defaults={"state": serializer.validated_data["state"]},
-        )
+        with transaction.atomic():
+            # Lock the row if it exists to prevent concurrent inserts
+            obj, created = DailyMood.objects.select_for_update().get_or_create(
+                user=user,
+                date=today,
+                defaults={"state": state}
+            )
+            if not created:
+                obj.state = state
+                obj.save(update_fields=["state"])
 
-        output = DailyMoodSerializer(instance)
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        return Response(output.data, status=status_code)
-
+        return Response(DailyMoodSerializer(obj).data, status=status_code)
 
 # =======================================================
 # Vector Drawing
@@ -326,7 +331,7 @@ class VectorDrawingListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -359,7 +364,7 @@ class VectorDrawingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
         user = self.request.user
@@ -393,7 +398,7 @@ class StudentTrackListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated(), IsStudent()]
-        return [permissions.IsAuthenticated(), (IsStudent() | IsCounselor() | IsAdminRole())]
+        return [permissions.IsAuthenticated(), IsStudent | IsCounselor | IsAdminRole]
 
     def get_queryset(self):
         user = self.request.user
