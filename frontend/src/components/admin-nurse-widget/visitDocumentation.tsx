@@ -1,12 +1,40 @@
 import { useState } from "react";
+import { api } from "../../services/api";
+import { Save } from "lucide-react";
 
-export default function VisitDocumentation() {
+interface VisitDocumentationProps {
+  studentId?: string | null;
+  onUpdate?: () => void;
+}
+
+export default function VisitDocumentation({ studentId, onUpdate }: VisitDocumentationProps) {
   const [reasonForVisit, setReasonForVisit] = useState("");
   const [timeOfAdmission, setTimeOfAdmission] = useState("");
   const [observations, setObservations] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    console.log({ reasonForVisit, timeOfAdmission, observations });
+  const handleSave = async () => {
+    if (!studentId || !reasonForVisit || !observations) {
+      alert("Please fill all fields.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await api.post(`/api/safety/admin/nurse-logs/${studentId}/`, {
+        reason: reasonForVisit,
+        timeOfAdmission,
+        observations
+      });
+      setReasonForVisit("");
+      setTimeOfAdmission("");
+      setObservations("");
+      onUpdate?.();
+    } catch (error) {
+      console.error("Failed to save log entry", error);
+      alert("Failed to save log entry.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -51,9 +79,10 @@ export default function VisitDocumentation() {
       </div>
       <div className="flex justify-end">
         <button
+          disabled={isSaving}
           onClick={handleSave}
-          className="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 transition text-white text-sm font-bold tracking-widest px-6 py-3 rounded-lg cursor-pointer">
-          SAVE LOG ENTRY
+          className="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 transition text-white text-sm font-bold tracking-widest px-6 py-3 rounded-lg cursor-pointer flex items-center justify-center gap-2">
+          {isSaving ? "SAVING..." : <><Save size={18} /> SAVE LOG ENTRY</>}
         </button>
       </div>
     </div>
