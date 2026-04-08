@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 import dj_database_url
 from datetime import timedelta
 from corsheaders.defaults import default_headers
+import platform
 
 # Load environment variables from .env file
 load_dotenv()
@@ -228,8 +229,12 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
+if platform.system() == 'Windows' and os.path.exists('E:/'):
+    # This triggers when the backend is running on the school server
+    MEDIA_ROOT = 'E:/GIMI_Storage/media/'
+else:
+    # This triggers when you're testing locally on your MacBook
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # url to spyke's machine para ai and dapat tailscalers
 LLM_BASE_URL = "http:100.100.111.14/v1/chat/completions"
 
