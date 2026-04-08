@@ -90,7 +90,7 @@ api.interceptors.response.use(
           _failedQueue.push({ resolve, reject })
         })
           .then((token) => {
-            originalRequest.headers.Authorization = "Bearer ${token}"
+            originalRequest.headers.Authorization = `Bearer ${token}`
             return api(originalRequest)
           })
           .catch((err) => Promise.reject(err))
@@ -106,7 +106,7 @@ api.interceptors.response.use(
         const newToken = data.access
         setAccessToken(newToken)
         processQueue(null, newToken)
-        originalRequest.headers.Authorization = "Bearer ${newToken}"
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
         return api(originalRequest)
       } catch (refreshError) {
         setAccessToken(null)
