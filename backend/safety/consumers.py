@@ -25,24 +25,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def safety_alert(self, event):
         await self.send(text_data=json.dumps(event))
 
-    async def handle_safety_alert(self, user, message, matched_phrase):
-        # 1. Generate the "Red Pill" snippet first
-        snippet = await sync_to_async(get_smart_snippet)(message, matched_phrase)
+    # consumers.py
 
-        # 2. Call your hardcoded summary function
-        # No need for sync_to_async here as it's just string manipulation
+    async def handle_safety_alert(self, user, message, matched_phrase):
+        # We still generate the snippet for the console/logs if you want
+        snippet = await sync_to_async(get_smart_snippet)(message, matched_phrase)
         ai_summary = get_hardcoded_summary(matched_phrase, snippet)
 
-        print("\n" + "="*40)
-        print(f"🚩 SAFETY ALERT GENERATED FOR: {user.username}")
-        print(f"Summary: {ai_summary}")
-        print("="*40 + "\n")
-
-        # 3. Save the flag to the database
+        # 🚩 THE FIX: Save 'message' (the full content), NOT 'snippet'
         await sync_to_async(SafetyFlag.objects.create)(
             user=user,
-            flagged_text=snippet, # The snippet for the table
-            ai_summary=ai_summary, # The professional summary for the sidebar
+            flagged_text=message, # <--- Save the WHOLE thing here
+            ai_summary=ai_summary,
             matched_phrases=[matched_phrase] if matched_phrase else [],
             risk_level='High'
         )

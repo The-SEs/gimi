@@ -10,4 +10,5 @@ urlpatterns = [
     path("admin/medications/<int:user_id>/", views.MedicationRecordView.as_view(), name="admin-medications"),
     path("admin/hospitalization/<int:user_id>/", views.HospitalizationHistoryView.as_view(), name="admin-hospitalization"),
     path("admin/nurse-logs/<int:user_id>/", views.NurseLogView.as_view(), name="admin-nurse-logs"),
+    path('admin/flags/student/<int:user_id>/', views.StudentSafetySummaryView.as_view(), name='student-safety-summary'),
 ]
