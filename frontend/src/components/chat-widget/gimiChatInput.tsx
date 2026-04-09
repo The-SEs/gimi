@@ -1,50 +1,71 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { ArrowRightIcon } from "lucide-react";
-
-type GimiChatInputProps = {
-  className?: string;
-  placeholder?: string;
-  onSend?: (message: string) => void;
-};
+import { useState } from "react"
 
 export default function GimiChatInput({
-  className = "",
-  placeholder = "Type your message...",
   onSend,
-}: GimiChatInputProps) {
-  const [value, setValue] = useState("");
+}: {
+  onSend: (msg: string) => void
+}) {
+  const [text, setText] = useState("")
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  // Check if input is empty, ignoring whitespace
+  const isInputEmpty = text.trim() === ""
 
-    const trimmedValue = value.trim();
-    if (!trimmedValue) return;
+  const handleSend = () => {
+    // Protection: don't send if empty
+    if (isInputEmpty) return
 
-    onSend?.(trimmedValue);
-    setValue("");
-  };
+    onSend(text)
+    setText("") // Clear the input field after sending
+  }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={`relative flex min-h-[92px] w-full items-center rounded-[18px] bg-[#d8e7ff] px-5 pr-20 shadow-inner shadow-white/30 ${className}`.trim()}
-    >
-      <input
-        type="text"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-transparent text-[1.05rem] text-[#35528f] placeholder:text-[#7d97ca] outline-none"
-      />
+    <div className="flex w-full flex-col">
+      <div className="flex h-10 w-full" />
+      <div className="flex items-center gap-3">
+        {/* LIGHT BLUE INPUT BOX with Placeholder */}
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            // Send on Enter, but only if the input isn't empty
+            if (e.key === "Enter" && !isInputEmpty) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
+          placeholder="Type a message..."
+          className="flex-1 rounded-full border border-gray-200 px-5 py-3 outline-none focus:border-[#f3a9b7]"
+        />
 
-      <button
-        type="submit"
-        className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#5a7dc4] text-white shadow-[0_8px_18px_rgba(90,125,196,0.35)] transition hover:scale-[1.04]"
-        aria-label="Send message"
-      >
-        <ArrowRightIcon className="h-5 w-5" />
-      </button>
-    </form>
-  );
+        {/* CIRCULAR SEND BUTTON with mauve arrow */}
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={isInputEmpty}
+          className={`flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-all duration-200 hover:scale-[1.03] ${
+            isInputEmpty
+              ? "cursor-not-allowed bg-gray-300 opacity-60"
+              : "bg-[#844250] hover:bg-[#6b3541]"
+          }`}
+          aria-label="Send message"
+        >
+          {/* Mauve arrow icon */}
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
 }

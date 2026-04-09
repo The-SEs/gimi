@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from channels.layers import get_channel_layer
-from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
+from .models import ChatMessage, JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
 from .serializers import (
     JournalEntrySerializer, UserMoodSerializer,
     DailyMoodSerializer, VectorDrawingSerializer, StudentTrackSerializer
@@ -461,3 +461,11 @@ class StudentTrackDetailView(APIView):
         print("✅ VERDICT: Song found and verified. Deleting now...")
         track.delete()
         return Response({"success": "Deleted!"}, status=204)
+
+class ChatHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        messages = ChatMessage.objects.filter(user=request.user)
+        data = [{"sender": msg.sender, "text": msg.text} for msg in messages]
+        return Response(data)
