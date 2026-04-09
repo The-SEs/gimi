@@ -1,4 +1,4 @@
-import { Calendar } from "lucide-react";
+import { Calendar } from "lucide-react"
 import {
   XMarkIcon,
   CalendarDaysIcon,
@@ -7,28 +7,28 @@ import {
   ComputerDesktopIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-} from "@heroicons/react/24/outline";
-import { useState, useRef } from "react";
-import { consultationService } from "../../services/consultationService";
+} from "@heroicons/react/24/outline"
+import { useState, useRef } from "react"
+import { consultationService } from "../../services/consultationService"
 
 export default function Consulation() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false)
+  const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [selectedMode, setSelectedMode] = useState<string | null>(null)
 
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [reason, setReason] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [reason, setReason] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const timeContainerRef = useRef<HTMLDivElement>(null);
+  const timeContainerRef = useRef<HTMLDivElement>(null)
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   const [currentMonth, setCurrentMonth] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
-  );
+  )
 
   const timeSlots = [
     "8:30 am",
@@ -40,117 +40,117 @@ export default function Consulation() {
     "2:00 pm",
     "3:00 pm",
     "4:30 pm",
-  ];
+  ]
 
   // for calendar stuffs
   const daysInMonth = new Date(
     currentMonth.getFullYear(),
     currentMonth.getMonth() + 1,
     0,
-  ).getDate();
+  ).getDate()
   const firstDayOfMonth = new Date(
     currentMonth.getFullYear(),
     currentMonth.getMonth(),
     1,
-  ).getDay();
+  ).getDay()
 
   const isMinMonth =
     currentMonth.getFullYear() === today.getFullYear() &&
-    currentMonth.getMonth() === today.getMonth();
+    currentMonth.getMonth() === today.getMonth()
 
-  const maxMonthDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const maxMonthDate = new Date(today.getFullYear(), today.getMonth() + 1, 1)
   const isMaxMonth =
     currentMonth.getFullYear() === maxMonthDate.getFullYear() &&
-    currentMonth.getMonth() === maxMonthDate.getMonth();
+    currentMonth.getMonth() === maxMonthDate.getMonth()
 
   const handlePrevMonth = () => {
     if (!isMinMonth) {
       setCurrentMonth(
         new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
-      );
+      )
     }
-  };
+  }
 
   const handleNextMonth = () => {
     if (!isMaxMonth) {
       setCurrentMonth(
         new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
-      );
+      )
     }
-  };
+  }
 
   const handleTimeScroll = () => {
-    if (!timeContainerRef.current) return;
-    const scrollTop = timeContainerRef.current.scrollTop;
+    if (!timeContainerRef.current) return
+    const scrollTop = timeContainerRef.current.scrollTop
     // Each item is 40px tall, so we divide the scroll position by 40 to get the closest index
-    const index = Math.round(scrollTop / 40);
+    const index = Math.round(scrollTop / 40)
 
     if (index >= 0 && index < timeSlots.length) {
       if (timeSlots[index] !== selectedTime) {
-        setSelectedTime(timeSlots[index]);
+        setSelectedTime(timeSlots[index])
       }
     }
-  };
+  }
 
   const getCombinedDateTime = () => {
-    if (!selectedDate || !selectedTime) return null;
+    if (!selectedDate || !selectedTime) return null
 
-    const [time, modifier] = selectedTime.split(" ");
-    const [hours, minutes] = time.split(":");
-    let formattedHours = parseInt(hours, 10);
+    const [time, modifier] = selectedTime.split(" ")
+    const [hours, minutes] = time.split(":")
+    let formattedHours = parseInt(hours, 10)
 
-    if (formattedHours === 12) formattedHours = 0;
-    if (modifier === "pm") formattedHours += 12;
+    if (formattedHours === 12) formattedHours = 0
+    if (modifier === "pm") formattedHours += 12
 
-    const combined = new Date(selectedDate);
-    combined.setHours(formattedHours, parseInt(minutes, 10), 0, 0);
-    return combined.toISOString();
-  };
+    const combined = new Date(selectedDate)
+    combined.setHours(formattedHours, parseInt(minutes, 10), 0, 0)
+    return combined.toISOString()
+  }
 
   const handleSubmit = async () => {
     if (!selectedDate && !selectedTime && !selectedMode) {
-      alert("Please select a date, time, and mode of consultation.");
-      return;
+      alert("Please select a date, time, and mode of consultation.")
+      return
     } else if (!selectedDate) {
-      alert("Please select a date.");
-      return;
+      alert("Please select a date.")
+      return
     } else if (!selectedTime) {
-      alert("Please select a time.");
-      return;
+      alert("Please select a time.")
+      return
     } else if (!selectedMode) {
-      alert("Please select a mode of consultation.");
-      return;
+      alert("Please select a mode of consultation.")
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       const modeMap: Record<string, "ON" | "FF"> = {
         Online: "ON",
         "Face to face": "FF",
-      };
+      }
 
       await consultationService.createConsultation({
         requested_date: getCombinedDateTime()!,
         mode_of_consultation: modeMap[selectedMode],
         reason: reason,
-      });
+      })
 
-      alert("Consultation scheduled successfullly!");
-      setIsVisible(false);
+      alert("Consultation scheduled successfullly!")
+      setIsVisible(false)
 
-      window.dispatchEvent(new Event("consultation-added"));
+      window.dispatchEvent(new Event("consultation-added"))
 
-      setSelectedDate(null);
-      setSelectedTime(null);
-      setSelectedMode(null);
-      setReason("");
+      setSelectedDate(null)
+      setSelectedTime(null)
+      setSelectedMode(null)
+      setReason("")
     } catch (error) {
-      console.error("Failed to schedule consultation:", error);
-      alert("Failed to schedule. Please try again.");
+      console.error("Failed to schedule consultation:", error)
+      alert("Failed to schedule. Please try again.")
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <>
@@ -257,23 +257,23 @@ export default function Consulation() {
                         <div key={`empty-${i}`} />
                       ))}
                       {Array.from({ length: daysInMonth }).map((_, i) => {
-                        const day = i + 1;
+                        const day = i + 1
                         const dateObj = new Date(
                           currentMonth.getFullYear(),
                           currentMonth.getMonth(),
                           day,
-                        );
-                        const isDisabled = dateObj < today;
+                        )
+                        const isDisabled = dateObj < today
                         const isSelected =
-                          selectedDate?.getTime() === dateObj.getTime();
+                          selectedDate?.getTime() === dateObj.getTime()
 
                         return (
                           <button
                             key={day}
                             disabled={isDisabled}
                             onClick={() => {
-                              setSelectedDate(dateObj);
-                              setShowCalendar(false);
+                              setSelectedDate(dateObj)
+                              setShowCalendar(false)
                             }}
                             className={`p-2 text-sm rounded-full flex items-center justify-center w-8 h-8 mx-auto transition-colors
                               ${
@@ -290,7 +290,7 @@ export default function Consulation() {
                           >
                             {day}
                           </button>
-                        );
+                        )
                       })}
                     </div>
                   </div>
@@ -325,7 +325,7 @@ export default function Consulation() {
                   >
                     <div className="h-[60px] shrink-0 w-full"></div>
                     {timeSlots.map((time, index) => {
-                      const isSelected = selectedTime === time;
+                      const isSelected = selectedTime === time
                       return (
                         <div
                           key={index}
@@ -335,18 +335,18 @@ export default function Consulation() {
                               : "text-gray-400 font-medium"
                           }`}
                           onClick={() => {
-                            setSelectedTime(time);
+                            setSelectedTime(time)
                             if (timeContainerRef.current) {
                               timeContainerRef.current.scrollTo({
                                 top: index * 40,
                                 behavior: "smooth",
-                              });
+                              })
                             }
                           }}
                         >
                           {time}
                         </div>
-                      );
+                      )
                     })}
                     <div className="h-[60px] shrink-0 w-full"></div>
                   </div>
@@ -355,7 +355,7 @@ export default function Consulation() {
                 {/* Desktop Grid (hidden on mobile) */}
                 <div className="hidden md:grid grid-cols-3 gap-3">
                   {timeSlots.map((time, index) => {
-                    const isSelected = selectedTime === time;
+                    const isSelected = selectedTime === time
                     return (
                       <button
                         key={index}
@@ -369,7 +369,7 @@ export default function Consulation() {
                         <ClockIcon className="h-4 w-4" />
                         <span>{time}</span>
                       </button>
-                    );
+                    )
                   })}
                 </div>
               </div>
@@ -408,7 +408,7 @@ export default function Consulation() {
               {/* Brief Reason */}
               <div className="mb-6 md:mb-10">
                 <h2 className="text-sm font-semibold text-sky-900 mb-3 select-none">
-                  Brief reason (optional)
+                  Brief reason
                 </h2>
                 <textarea
                   value={reason}
@@ -437,5 +437,5 @@ export default function Consulation() {
         </div>
       )}
     </>
-  );
+  )
 }

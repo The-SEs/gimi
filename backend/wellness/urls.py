@@ -17,5 +17,6 @@ urlpatterns = [
     path("drawings/<int:pk>/", views.VectorDrawingDetailView.as_view()),
     # music
     path("tracks/", views.StudentTrackListCreateView.as_view()),
-    path("tracks/<int:pk>/", views.StudentTrackDetailView.as_view())
+    path("tracks/<int:pk>/", views.StudentTrackDetailView.as_view()),
+    path('chat-history/', views.ChatHistoryView.as_view(), name='chat_history'),
 ]

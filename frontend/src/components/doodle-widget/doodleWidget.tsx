@@ -13,7 +13,7 @@ export default function DoodleWidget({
 }: DoodleWidgetProps) {
   return (
     <div
-      className={`flex items-center w-[95%] md:w-[30%] gap-4 rounded-2xl bg-white px-6 py-5 shadow-sm cursor-pointer ${className}`}
+      className={`flex items-center w-full gap-5 rounded-2xl bg-white px-5 py-5 shadow-sm cursor-pointer ${className}`}
     >
       <img
         src={doodleIcon}

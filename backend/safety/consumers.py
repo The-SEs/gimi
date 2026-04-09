@@ -2,6 +2,7 @@ import json
 import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async  # <-- 1. Import this tool
+from wellness.models import ChatMessage
 from safety.ai_utils import get_hardcoded_summary
 from wellness.views import get_smart_snippet
 from safety.services import check_journal  # <-- 2. Import your safety logic
@@ -50,50 +51,48 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if text_data:
             data = json.loads(text_data)
             user_message = data.get("message")
-
             user = self.scope.get("user")
 
-            # --- THE INTERCEPTOR ---
-            # 3. Safely run the synchronous DB check inside this async environment
-            # --- THE INTERCEPTOR ---
+            # --- 1. SAVE THE USER'S MESSAGE FIRST ---
+            # We do this immediately so we never lose what the student said.
+            if user and user.is_authenticated:
+                await sync_to_async(ChatMessage.objects.create)(
+                    user=user, sender='user', text=user_message
+                )
+            else:
+                print("Warning: Unauthenticated user. Chat message not saved.")
+            # ----------------------------------------
+
+            # 3. Safely run the synchronous DB check for danger
             is_dangerous, matched_phrase, distance = await sync_to_async(check_journal)(user_message)
 
-
             if is_dangerous:
-                # 1. Safely attempt to save to the database without crashing the chat
-                await self.handle_safety_alert(user, user_message, matched_phrase)
+                # Safely attempt to save to the database without crashing the chat
+                if user and user.is_authenticated:
+                     await self.handle_safety_alert(user, user_message, matched_phrase)
 
-                chat_snippet = get_smart_snippet(user_message, matched_phrase)
-
-                try:
-                    user = self.scope.get("user")
-                    if user and user.is_authenticated:
-                        await sync_to_async(SafetyFlag.objects.create)(
-                            user=user,
-                            flagged_text=chat_snippet,
-                            matched_phrases=[matched_phrase] if matched_phrase else [],
-                            risk_level='High'
-                        )
-                    else:
-                        print("WARNING: High risk detected, but WebSocket user is not authenticated.")
-                except Exception as e:
-                    print(f"Error saving SafetyFlag: {e}")
-
-                # 2. Send warning to frontend (This will now ALWAYS trigger!)
+                # Send warning to frontend
                 warning_message = "We noticed you might be going through a tough time. Would you like to schedule a talk with the school counselor?"
+
+                # --- 2A. SAVE GIMI'S WARNING MESSAGE ---
+                if user and user.is_authenticated:
+                     await sync_to_async(ChatMessage.objects.create)(
+                         user=user, sender='gimi', text=warning_message
+                     )
+                # ---------------------------------------
 
                 await self.send(text_data=json.dumps({
                     "message": warning_message,
                     "done": True,
                     "status": "high_risk"
                 }))
-
                 return
-            # -----------------------
 
             # 5. IF SAFE, PROCEED WITH OLLAMA STREAMING
             url = f"{BASE_URL}/api/generate"
             payload = {"model": "llama3.2", "prompt": user_message, "stream": True}
+
+            full_bot_response = ""
 
             try:
                 # Open an asynchronous HTTP session
@@ -108,6 +107,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                                 chunk = json.loads(line.decode("utf-8"))
                                 content = chunk.get("response", "")
 
+                                full_bot_response += content
+
                                 # Send the token to the React frontend INSTANTLY
                                 await self.send(
                                     text_data=json.dumps(
@@ -117,5 +118,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                                         }
                                     )
                                 )
+
+                # --- 2B. SAVE GIMI'S FULL MESSAGE ---
+                # This happens after the stream finishes successfully
+                if user and user.is_authenticated:
+                    await sync_to_async(ChatMessage.objects.create)(
+                         user=user, sender='gimi', text=full_bot_response
+                    )
+                # ------------------------------------
+
             except Exception as e:
                 await self.send(text_data=json.dumps({"error": str(e)}))
