@@ -269,6 +269,7 @@ export default function DailyEntryEditor() {
       <div className="w-full max-w-[2000px] min-h-[1000px] bg-white/80 backdrop-blur-md rounded-2xl shadow-lg relative flex flex-col">
         <div className="w-full h-4 rounded-t-2xl bg-[#FFC4DB]" />
 
+        {/* HIGH RISK ALERT MODAL */}
         {showAlert && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-sky-900/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
@@ -278,6 +279,42 @@ export default function DailyEntryEditor() {
                 onClose={() => setShowAlert(false)}
                 actionNode={<Consulation />}
               />
+            </div>
+          </div>
+        )}
+
+        {/* ERROR POPUP MODAL */}
+        {status === "error" && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-red-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Failed to Save
+              </h3>
+              <p className="text-gray-500 text-sm mb-8">{errorMsg}</p>
+              <button
+                onClick={() => {
+                  setStatus("idle")
+                  setErrorMsg("")
+                }}
+                className="w-full py-3.5 bg-[#844250] text-white rounded-2xl font-bold shadow-lg hover:bg-[#6b3541] active:scale-95 transition-all"
+              >
+                Try Again
+              </button>
             </div>
           </div>
         )}
@@ -393,10 +430,6 @@ export default function DailyEntryEditor() {
                 ? "Viewing past entry"
                 : `${wordCount} ${wordCount === 1 ? "word" : "words"}`}
             </div>
-
-            {status === "error" && (
-              <p className="text-xs text-red-400">{errorMsg}</p>
-            )}
           </div>
         </div>
       </div>

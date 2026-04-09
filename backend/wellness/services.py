@@ -17,7 +17,8 @@ except ImportError:
     HAS_PYTESSERACT = False
 
 load_dotenv()
-BASE_URL = os.getenv("OLLAMA_BASE_URL")
+raw_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+BASE_URL = raw_url.split("/api")[0].split("/v1")[0].rstrip("/")
 llama_endpoint = f"{BASE_URL}/api/generate"
 
 def analyze_mood(content: str) -> tuple[dict, dict]:
@@ -78,11 +79,11 @@ def analyze_drawing_with_vision(image_b64: str, prompt: str = "Describe this dra
     """Use Ollama LLM to analyze drawing content with OCR enhancement"""
     try:
         print("[DEBUG] Starting drawing vision analysis...")
-        
+
         # Strip data URL prefix if present (e.g., "data:image/png;base64,...")
         if ',' in image_b64:
             image_b64 = image_b64.split(',', 1)[1]
-        
+
         # Optional: Extract text from image using OCR
         extracted_text = None
         if HAS_PYTESSERACT:
@@ -96,11 +97,11 @@ def analyze_drawing_with_vision(image_b64: str, prompt: str = "Describe this dra
                     prompt += f"\n\nText/words visible in drawing: '{extracted_text}'"
             except Exception as e:
                 print(f"[DEBUG] OCR extraction failed (non-critical): {e}")
-        
+
         # Convert base64 image to text description using vision model if available
         # Falls back to llama3.2 with text-based analysis
         model = "llava"  # Vision-capable model, falls back to llama3.2 if unavailable
-        
+
         payload = {
             "model": model,
             "prompt": prompt,
@@ -108,7 +109,7 @@ def analyze_drawing_with_vision(image_b64: str, prompt: str = "Describe this dra
             "stream": False,
             "temperature": 0  # Set to 0 for deterministic/consistent responses
         }
-        
+
         print(f"[DEBUG] Sending request to {llama_endpoint} with model: {model}")
         # Increased timeout to 120 seconds for vision analysis (can be slow)
         response = requests.post(llama_endpoint, json=payload, timeout=120)
@@ -129,7 +130,7 @@ def analyze_drawing_text_only(prompt: str):
         "stream": False,
         "temperature": 0  # Deterministic responses
     }
-    
+
     try:
         # Increased timeout for text analysis too
         response = requests.post(llama_endpoint, json=payload, timeout=60)
@@ -146,13 +147,13 @@ def parse_emotional_analysis_json(llm_response: str) -> dict:
     """
     if not llm_response:
         raise ValueError("Empty response from LLM")
-    
+
     try:
         # Try direct parse first
         return json.loads(llm_response)
     except json.JSONDecodeError:
         pass
-    
+
     # Handle markdown code blocks: ```json { ... } ```
     try:
         match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', llm_response, re.DOTALL)
@@ -161,7 +162,7 @@ def parse_emotional_analysis_json(llm_response: str) -> dict:
             return json.loads(json_str)
     except (json.JSONDecodeError, AttributeError):
         pass
-    
+
     # Handle case where JSON might be wrapped in extra text
     try:
         start = llm_response.find('{')
@@ -171,7 +172,7 @@ def parse_emotional_analysis_json(llm_response: str) -> dict:
             return json.loads(json_str)
     except json.JSONDecodeError:
         pass
-    
+
     # Validation failed
     print(f"[DEBUG] Failed to parse emotional analysis JSON from: {llm_response[:200]}")
     raise ValueError(f"Invalid emotional analysis response format. Expected JSON, got: {llm_response[:100]}")
@@ -186,25 +187,25 @@ def validate_emotional_analysis(data: dict) -> dict:
         "confidence": (int, float),
         "summary": str
     }
-    
+
     for field, expected_type in required_fields.items():
         if field not in data:
             raise ValueError(f"Missing required field: {field}")
         if not isinstance(data[field], expected_type):
             raise ValueError(f"Field '{field}' must be {expected_type}, got {type(data[field])}")
-    
+
     # Validate mood_label is one of the allowed values
     valid_moods = ['happy', 'sad', 'anxious', 'calm', 'angry', 'excited', 'stressed', 'neutral']
     if data['mood_label'].lower() not in valid_moods:
         raise ValueError(f"Invalid mood_label '{data['mood_label']}'. Must be one of: {valid_moods}")
-    
+
     # Validate confidence is 0.0-1.0
     if not (0.0 <= data['confidence'] <= 1.0):
         raise ValueError(f"Confidence must be between 0.0 and 1.0, got {data['confidence']}")
-    
+
     # Ensure lowercase mood_label
     data['mood_label'] = data['mood_label'].lower()
-    
+
     return data
 
 def get_drawing_emotional_analysis(image_b64: str):
@@ -213,7 +214,7 @@ def get_drawing_emotional_analysis(image_b64: str):
     Returns validated JSON with mood_label, confidence, and summary.
     """
     print("[DEBUG] get_drawing_emotional_analysis called with image_b64 length:", len(image_b64))
-    
+
     prompt = """You are an expert art therapist analyzing a student's drawing for emotional insight.
 
 DETAILED ANALYSIS:
@@ -266,26 +267,26 @@ RESPONSE FORMAT (JSON only, no other text):
   "confidence": <float 0.0-1.0>,
   "summary": "<1-2 sentence empathetic observation about the emotional expression in the drawing>"
 }"""
-    
+
     try:
         result_text = analyze_drawing_with_vision(image_b64, prompt)
-        
+
         if not result_text:
             print("[DEBUG] LLM returned empty response")
             return None
-        
+
         print(f"[DEBUG] Raw LLM response: {result_text[:200]}...")
-        
+
         # Parse JSON from response
         parsed = parse_emotional_analysis_json(result_text)
         print(f"[DEBUG] Parsed JSON: {parsed}")
-        
+
         # Validate required fields and types
         validated = validate_emotional_analysis(parsed)
         print(f"[DEBUG] Validated emotional analysis: {validated}")
-        
+
         return validated
-        
+
     except Exception as e:
         print(f"[DEBUG] Emotional analysis failed: {e}")
         return None

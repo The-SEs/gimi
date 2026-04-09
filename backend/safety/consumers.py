@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from safety.models import SafetyFlag
 
 load_dotenv()
-BASE_URL = os.getenv("OLLAMA_BASE_URL")
-
+raw_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+BASE_URL = raw_url.split("/api")[0].split("/v1")[0].rstrip("/")
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):

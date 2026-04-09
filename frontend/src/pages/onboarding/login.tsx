@@ -1,79 +1,79 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { isAxiosError } from "axios";
-import { useAuth } from "../../hooks/useAuth";
-import type { ApiError } from "../../types/auth";
-import { useGoogleLogin } from "@react-oauth/google";
-import GimiIcon from "../../assets/GIMI_Icon.svg";
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { isAxiosError } from "axios"
+import { useAuth } from "../../hooks/useAuth"
+import type { ApiError } from "../../types/auth"
+import { useGoogleLogin } from "@react-oauth/google"
+import GimiIcon from "../../assets/GIMI_Icon.svg"
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-  const { login, loginWithGoogle, status } = useAuth();
+  const navigate = useNavigate()
+  const { login, loginWithGoogle, status } = useAuth()
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  const isSubmitting = status === "loading" || isGoogleLoading;
+  const isSubmitting = status === "loading" || isGoogleLoading
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
 
     if (!email.trim() || !password.trim()) {
-      setError("Please enter a valid email and password");
-      return;
+      setError("Please enter a valid email and password")
+      return
     }
 
     try {
-      const response = await login({ username: email, password });
+      const response = await login({ username: email, password })
 
       if (response?.access) {
-        localStorage.setItem("access_token", response.access);
+        localStorage.setItem("access_token", response.access)
       }
 
-      const userRole = String(response?.user?.role || "").toUpperCase();
+      const userRole = String(response?.user?.role || "").toUpperCase()
 
       if (userRole === "STUDENT") {
-        navigate("/dashboard");
+        navigate("/dashboard")
       } else {
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard")
       }
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
-        const data = err.response.data as ApiError;
-        setError(data.detail ?? data.non_field_errors?.[0] ?? "Login failed.");
+        const data = err.response.data as ApiError
+        setError(data.detail ?? data.non_field_errors?.[0] ?? "Login failed.")
       } else {
-        setError("An unexpected error occurred.");
+        setError("An unexpected error occurred.")
       }
     }
   }
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      setIsGoogleLoading(true);
-      setError(null);
+      setIsGoogleLoading(true)
+      setError(null)
       try {
-        const response = await loginWithGoogle(tokenResponse.access_token);
+        const response = await loginWithGoogle(tokenResponse.access_token)
 
         // FORCE SAVE the token for the WebSocket
         if (response?.access) {
-          localStorage.setItem("access_token", response.access);
+          localStorage.setItem("access_token", response.access)
         }
-        navigate("/dashboard");
+        navigate("/onboarding-questions")
       } catch (err) {
-        console.error("Django rejected the Google token:", err);
-        setError("Google authentication failed. Please try again.");
+        console.error("Django rejected the Google token:", err)
+        setError("Google authentication failed. Please try again.")
       } finally {
-        setIsGoogleLoading(false);
+        setIsGoogleLoading(false)
       }
     },
     onError: () => {
-      setError("Google login popup closed or failed.");
+      setError("Google login popup closed or failed.")
     },
-  });
+  })
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
@@ -186,7 +186,7 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }
 
 function TapeStrip() {
@@ -204,7 +204,7 @@ function TapeStrip() {
         backdropFilter: "blur(1px)",
       }}
     />
-  );
+  )
 }
 
 function CardShell({ children }: { children: React.ReactNode }) {
@@ -218,21 +218,21 @@ function CardShell({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
-  );
+  )
 }
 
 interface LoginFormProps {
-  email: string;
-  setEmail: (v: string) => void;
-  password: string;
-  setPassword: (v: string) => void;
-  showPassword: boolean;
-  setShowPassword: (v: boolean) => void;
-  error: string | null;
-  isSubmitting: boolean;
-  isGoogleLoading: boolean;
-  handleSubmit: (e: React.FormEvent) => void;
-  handleGoogleLogin: () => void;
+  email: string
+  setEmail: (v: string) => void
+  password: string
+  setPassword: (v: string) => void
+  showPassword: boolean
+  setShowPassword: (v: boolean) => void
+  error: string | null
+  isSubmitting: boolean
+  isGoogleLoading: boolean
+  handleSubmit: (e: React.FormEvent) => void
+  handleGoogleLogin: () => void
 }
 
 function LoginForm({
@@ -377,7 +377,7 @@ function LoginForm({
         </Link>
       </p>
     </>
-  );
+  )
 }
 
 function GoogleIcon() {
@@ -400,5 +400,5 @@ function GoogleIcon() {
         fill="#EA4335"
       />
     </svg>
-  );
+  )
 }
