@@ -18,7 +18,7 @@ import AdminDashboard from "../pages/admin/dashboard.tsx"
 import ForgotPasswordPage from "../pages/onboarding/forgot_password.tsx"
 import ResourcesPage from "../pages/resources/resources.tsx"
 import RoleProtectedRoute from "../components/auth/RoleProtectedRoute.tsx"
-import TestFlagPage from "../components/widget/testPage.tsx"
+import StudentProfilePage from "../pages/admin/guidance"
 
 const RegisterWrapper = () => {
   const navigate = useNavigate()
@@ -33,7 +33,6 @@ export const router = createBrowserRouter([
   { path: "/register", element: <RegisterWrapper /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/disclaimers", element: <DisclaimersPage /> },
-  { path: "/test-page", element: <TestFlagPage></TestFlagPage> },
 
   // ====================
   // STUDENT
@@ -121,6 +120,10 @@ export const router = createBrowserRouter([
             <SecurityAdminPage />
           </RoleProtectedRoute>
         ),
+      },
+      {
+        path: "guidance",
+        element: <StudentProfilePage />,
       },
     ],
   },
