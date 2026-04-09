@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from pgvector.django import VectorField
 from users.models import CustomUser
+from django.core.exceptions import ValidationError
 
 class DailyMood(models.Model):
     #manual daily mood log once a day
@@ -102,3 +103,41 @@ class StudentTrack(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.user.email}"
+
+
+class StudentPhoto(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete = models.CASCADE,
+        realted_name = "photos",
+    )
+    image = models.ImageField(upload_to = "student_photos/%Y/%m/%d/")
+    caption = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["uploaded_at"]
+
+    def clean(self):
+        if (
+                StudentPhoto.objects.filter(user=self.user).count() >= 4
+                and not self.pk
+        ):
+            raise ValidaitonError("Maximum of 4 photos only.")
+
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Photo by {self.user.email} on {self.uploaded_at.date()}"
+      
+class ChatMessage(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    sender = models.CharField(max_length=20)
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["timestamp"]

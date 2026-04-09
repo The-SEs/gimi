@@ -8,10 +8,10 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from channels.layers import get_channel_layer
-from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
+from .models import ChatMessage, JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack, StudentPhoto
 from .serializers import (
     JournalEntrySerializer, UserMoodSerializer,
-    DailyMoodSerializer, VectorDrawingSerializer, StudentTrackSerializer
+    DailyMoodSerializer, VectorDrawingSerializer, StudentTrackSerializer, StudentPhotoSerializer
 )
 from .services import analyze_mood, embed_drawing, get_drawing_emotional_analysis
 
@@ -22,6 +22,9 @@ from safety.models import SafetyFlag
 from wellness.services import embed_drawing
 from asgiref.sync import async_to_sync
 from users.permissions import IsStudent, IsCounselor, IsAdminRole
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.core.exceptions import ValidationError
 
 def _save_mood(entry):
     result, raw = analyze_mood(entry.content)
@@ -126,9 +129,9 @@ class JournalListCreateView(generics.ListCreateAPIView):
             # 3. Create the Safety Flag with the AI Summary
             SafetyFlag.objects.create(
                 user=request.user,
-                flagged_text=display_text,
+                flagged_text=content, # <--- Full content saved to DB
                 matched_phrases=[matched_phrase] if matched_phrase else [],
-                ai_summary=ai_summary, # <--- Counselor sees this in the top-left!
+                ai_summary=ai_summary,
                 risk_level="High"
             )
             _save_mood(entry)
@@ -215,7 +218,7 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
 
             SafetyFlag.objects.create(
                 user=request.user,
-                flagged_text=display_text,
+                flagged_text=content, # <--- Full content saved to DB
                 matched_phrases=[matched_phrase] if matched_phrase else [],
                 ai_summary=ai_summary,
                 risk_level="High"
@@ -461,3 +464,71 @@ class StudentTrackDetailView(APIView):
         print("✅ VERDICT: Song found and verified. Deleting now...")
         track.delete()
         return Response({"success": "Deleted!"}, status=204)
+
+
+class StudentPhotoView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        photos = StudentPhoto.objects.filter(user=request.user)
+        serializer = StudentPhotoSerializer(photos, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        if StudentPhoto.objects.filter(user=request.user).count() >=4:
+            return Response(
+                {"detail": "Maximum of 4 photos allowed. "},
+                status = status.HTTP_400_BAD_REQUEST
+            )
+        serializer = StudentPhotoSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status = status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, photo_id):
+        try:
+            photo = StudentPhoto.objects.get(id=photo_id, user=request.user)
+            photo.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except StudentPhoto.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class AdminStudentPhotoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        photos = StudentPhoto.objects.filter(user__id = user_id)
+        serializer = StudentPhotoSerializer(photos, many=True, context={"request": request})
+        return Response(serializer.data)
+
+class StudentPhotoReplaceView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        #replace oldest photo when they upload and at maxcapacity
+        photos = StudentPhoto.objects.filter(user=request.user).order_by("uploaded_at")
+        if photos.count() < 4:
+            return Response(
+                {"detail": "fewer than 4 photos use the regular upload endpoint."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        oldest = photos.first()
+        oldest.image.delete(save=False)
+        oldest.delete()
+
+        serializer = StudentPhotoSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      
+class ChatHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        messages = ChatMessage.objects.filter(user=request.user)
+        data = [{"sender": msg.sender, "text": msg.text} for msg in messages]
+        return Response(data)

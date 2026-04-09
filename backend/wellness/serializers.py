@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack
+from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack, StudentPhoto
 from django.utils import timezone
 
 
@@ -36,3 +36,16 @@ class StudentTrackSerializer(serializers.ModelSerializer):
         model = StudentTrack
         fields = ['id', 'title', 'audio_file', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+class StudentPhotoSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentPhoto
+        fields = ["id", "image_url", "caption", "uploaded_at"]
+
+    def get_image_url(self, obj):
+        request = self.context.get("request")
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        return None

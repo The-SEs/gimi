@@ -34,7 +34,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
 # Application definition
 
@@ -119,6 +118,7 @@ ALLOWED_HOSTS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "https://gimi.qzz.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://gimi.qzz.io",
@@ -251,7 +251,9 @@ else:
     # This triggers when you're testing locally on your MacBook
     MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # url to spyke's machine para ai and dapat tailscalers
-LLM_BASE_URL = "http:100.100.111.14/v1/chat/completions"
+LLM_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1/chat/completions"
+)
 
 # allow cookies to be sent cross-origin in development
 SESSION_COOKIE_SAMESITE = "Lax"
