@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from wellness.views import get_smart_snippet
-from users.permissions import IsAdminRole, IsCounselor, IsNurse
+from users.permissions import IsAdminRole, IsCounselor, IsNurse, IsSecurity
 from .models import SafetyFlag
 from django.db.models import Count, Q
 from .models import (
@@ -186,7 +186,7 @@ class NurseLogView(APIView):
         return Response({"status": "saved"}, status=201)
 
 class HighRiskStudentsView(APIView):
-    permission_classes = [IsNurse | IsCounselor | IsAdminRole]
+    permission_classes = [IsNurse | IsCounselor | IsAdminRole | IsSecurity]
 
     def get(self, request):
         from django.contrib.auth import get_user_model
