@@ -132,7 +132,8 @@ class JournalListCreateView(generics.ListCreateAPIView):
                 flagged_text=content, # <--- Full content saved to DB
                 matched_phrases=[matched_phrase] if matched_phrase else [],
                 ai_summary=ai_summary,
-                risk_level="High"
+                risk_level="High",
+                source='JOURNAL'
             )
             _save_mood(entry)
 
@@ -221,7 +222,8 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
                 flagged_text=content, # <--- Full content saved to DB
                 matched_phrases=[matched_phrase] if matched_phrase else [],
                 ai_summary=ai_summary,
-                risk_level="High"
+                risk_level="High",
+                source='JOURNAL'
             )
             _save_mood(entry)
 
@@ -524,7 +526,7 @@ class StudentPhotoReplaceView(APIView):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-      
+
 class ChatHistoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

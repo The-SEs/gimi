@@ -27,6 +27,17 @@ class SafetyFlag(models.Model):
 
     ai_summary = models.TextField(blank=True, null=True)
 
+    SOURCE_CHOICES = [
+        ('CHAT', 'Chat Message'),
+        ('JOURNAL', 'Journal Entry'),
+    ]
+
+    source = models.CharField(
+        max_length=10,
+        choices=SOURCE_CHOICES,
+        default='CHAT'
+    )
+
     def __str__(self):
         return f"Flag for {self.user.username} at {self.timestamp}"
 

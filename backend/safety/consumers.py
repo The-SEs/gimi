@@ -38,7 +38,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             flagged_text=message,  # <--- Save the WHOLE thing here
             ai_summary=ai_summary,
             matched_phrases=[matched_phrase] if matched_phrase else [],
-            risk_level="High",
+            risk_level='High',
+            source='CHAT'
         )
 
     async def receive(self, text_data=None, bytes_data=None):
