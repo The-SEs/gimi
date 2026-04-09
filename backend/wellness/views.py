@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from channels.layers import get_channel_layer
-from .models import JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack, StudentPhoto
+from .models import ChatMessage, JournalEntry, UserMood, DailyMood, VectorDrawing, StudentTrack, StudentPhoto
 from .serializers import (
     JournalEntrySerializer, UserMoodSerializer,
     DailyMoodSerializer, VectorDrawingSerializer, StudentTrackSerializer, StudentPhotoSerializer
@@ -524,3 +524,11 @@ class StudentPhotoReplaceView(APIView):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      
+class ChatHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        messages = ChatMessage.objects.filter(user=request.user)
+        data = [{"sender": msg.sender, "text": msg.text} for msg in messages]
+        return Response(data)

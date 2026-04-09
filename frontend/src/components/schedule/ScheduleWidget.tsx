@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
   consultationService,
-  Consultation,
+  type Consultation,
 } from "../../services/consultationService";
 
 const ScheduleWidget: React.FC = () => {
@@ -15,7 +15,7 @@ const ScheduleWidget: React.FC = () => {
     const fetchConsultations = async () => {
       setIsLoading(true);
       try {
-        const data = await consultationService.setConsultations();
+        const data = await consultationService.getConsultations();
         setConsultations(data);
       } catch (error) {
         console.error("Failed to fetch consultations", error);

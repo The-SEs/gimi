@@ -132,3 +132,12 @@ class StudentPhoto(models.Model):
 
     def __str__(self):
         return f"Photo by {self.user.email} on {self.uploaded_at.date()}"
+      
+class ChatMessage(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    sender = models.CharField(max_length=20)
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["timestamp"]

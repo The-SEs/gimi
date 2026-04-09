@@ -25,15 +25,15 @@ export default function TalkToGimi({
             }
           : undefined
       }
-      className={`flex flex-row items-center gap-4 rounded-[18px] bg-white px-4 py-3 shadow-[0_4px_20px_rgba(136,178,255,0.18)] sm:px-5 sm:py-4 w-[95%] md:w-[30%] ${
+      className={`flex flex-row items-center gap-5 rounded-2xl bg-white px-5 py-5 w-full shadow-[0_4px_20px_rgba(136,178,255,0.18)] ${
         onClick
           ? "cursor-pointer transition-transform duration-150 active:scale-[0.98]"
           : ""
-      }`}
+      } ${className}`}
     >
       {/* Icon container */}
       <div className="shrink-0 rounded-[14px] bg-[#DBEAFE] p-3 sm:p-3.5">
-        <img src={chatIcon} alt="Chat icon" className="h-8 w-8 sm:h-9 sm:w-9" />
+        <img src={chatIcon} alt="Chat icon" className="h-12 w-12" />
       </div>
 
       {/* Text content */}
