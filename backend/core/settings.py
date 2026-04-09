@@ -36,7 +36,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -111,12 +110,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "100.93.60.3", "100.100.111.14"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "100.93.60.3",
+    "100.100.111.14",
+    "gimi.qzz.io",
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://gimi.qzz.io",
 ]
+
+CSRF_TRUSTED_ORIGINS = ["https://gimi.qzz.io"]
 
 CORS_ALLOW_CREDENTIALS = True
 
