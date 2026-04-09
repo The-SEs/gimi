@@ -24,7 +24,7 @@ export default function CanvasPage() {
               onNext={() => {}}
               onPrev={() => {}}
             />
-            <PictureWidget image="" />
+            <PictureWidget />
           </div>
         </div>
 

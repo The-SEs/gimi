@@ -35,7 +35,7 @@ export default function DashboardPage() {
       <div className="mx-auto lg:flex">
         <div className="grid grid-cols-1 mx-15">
           <PlaylistManager />
-          <PictureWidget image={""} />
+          <PictureWidget />
         </div>
         <ScheduleWidgetDesktop />
       </div>

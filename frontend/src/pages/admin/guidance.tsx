@@ -1,29 +1,29 @@
-import { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
-import { api } from "../../services/api"
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { api } from "../../services/api";
 
 // Components
-import StudentIdentityWidget from "../../components/admin-guidance-widget/studentInfo.tsx"
-import ConsultationHistoryWidget from "../../components/admin-guidance-widget/consultation.tsx"
-import MedicalDataWidget from "../../components/admin-guidance-widget/medicalData.tsx"
-import CounselorFlagCard from "../../components/widget/counselorFlagCard.tsx"
+import StudentIdentityWidget from "../../components/admin-guidance-widget/studentInfo.tsx";
+import ConsultationHistoryWidget from "../../components/admin-guidance-widget/consultation.tsx";
+import MedicalDataWidget from "../../components/admin-guidance-widget/medicalData.tsx";
+import CounselorFlagCard from "../../components/widget/counselorFlagCard.tsx";
 
 export default function StudentProfilePage() {
-  const { id } = useParams()
+  const { id } = useParams();
 
   // Data States
-  const [safetyData, setSafetyData] = useState<any>(null)
-  const [conditions, setConditions] = useState<any[]>([])
-  const [medications, setMedications] = useState<any[]>([])
-  const [hospitalization, setHospitalization] = useState<any[]>([])
+  const [safetyData, setSafetyData] = useState<any>(null);
+  const [conditions, setConditions] = useState<any[]>([]);
+  const [medications, setMedications] = useState<any[]>([]);
+  const [hospitalization, setHospitalization] = useState<any[]>([]);
 
   // UI States
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAllStudentData = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
         // Run all fetches in parallel for speed
         const [safetyRes, condRes, medRes, hospRes] = await Promise.all([
@@ -31,21 +31,21 @@ export default function StudentProfilePage() {
           api.get(`/api/safety/admin/conditions/${id}/`),
           api.get(`/api/safety/admin/medications/${id}/`),
           api.get(`/api/safety/admin/hospitalization/${id}/`),
-        ])
+        ]);
 
-        setSafetyData(safetyRes.data)
-        setConditions(condRes.data)
-        setMedications(medRes.data)
-        setHospitalization(hospRes.data)
+        setSafetyData(safetyRes.data);
+        setConditions(condRes.data);
+        setMedications(medRes.data);
+        setHospitalization(hospRes.data);
       } catch (error) {
-        console.error("Error fetching student profile data:", error)
+        console.error("Error fetching student profile data:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    if (id) fetchAllStudentData()
-  }, [id])
+    if (id) fetchAllStudentData();
+  }, [id]);
 
   return (
     <div className="min-h-screen bg-white relative">
@@ -143,5 +143,5 @@ export default function StudentProfilePage() {
         </div>
       )}
     </div>
-  )
+  );
 }
