@@ -159,9 +159,12 @@ SIMPLE_JWT = {
 }
 
 JWT_COOKIE_NAME = "gimi-refresh-token"
-JWT_COOKIE_SECURE = False  # Set to True in production (HTTPS)
+JWT_COOKIE_SECURE = True  # Set to True in production (HTTPS)
 JWT_COOKIE_HTTPONLY = True  # Prevents JavaScript from reading the cookie
 JWT_COOKIE_SAMESITE = "Lax"
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 SOCIALACCOUNT_STORE_TOKENS = True
 LOGIN_REDIRECT_URL = "/callback/"
