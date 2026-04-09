@@ -9,7 +9,7 @@ from .models import (
 )
 
 class AdminSafetyFlagsView(APIView):
-    persmission_classes = [IsAdminRole, IsCounselor]
+    permission_classes = [IsAdminRole | IsCounselor] # Fixed typo 'persmission'
 
     def get(self, request):
         flags = SafetyFlag.objects.select_related('user').order_by('-timestamp')
@@ -18,6 +18,7 @@ class AdminSafetyFlagsView(APIView):
         for flag in flags:
             data.append({
                 "id": flag.id,
+                "user_id": flag.user.id, # <--- ADD THIS LINE
                 "user_name": flag.user.username,
                 "user_email": flag.user.email,
                 "flagged_text": flag.flagged_text,
@@ -26,9 +27,7 @@ class AdminSafetyFlagsView(APIView):
                 "ai_summary": flag.ai_summary,
                 "timestamp": flag.timestamp
             })
-
         return Response(data)
-
 class StudentMedicalInfoView(APIView):
     permission_classes = [IsNurse | IsCounselor | IsAdminRole]
 
@@ -355,3 +354,25 @@ class EmergencyContactView(APIView):
             return Response(status=204)
         except EmergencyContact.DoesNotExist:
             return Response({"error": "Contact not found"}, status=404)
+
+class StudentSafetySummaryView(APIView):
+    permission_classes = [IsAdminRole | IsCounselor]
+
+    def get(self, request, user_id):
+        # IMPORTANT: We filter by 'user_id' (the student), not 'id' (the flag)
+        # Also, use 'user' because that is the field name in your SafetyFlag model
+        flag = SafetyFlag.objects.filter(user_id=user_id).order_of('-timestamp').first()
+
+        if not flag:
+            # If this hits, it means this specific student has 0 flags in the DB
+            return Response({"detail": "No flags found."}, status=404)
+
+        return Response({
+            "id": flag.id,              # The Flag ID
+            "user_id": flag.user.id,    # The Student ID
+            "user_name": flag.user.username,
+            "risk_level": flag.risk_level,
+            "ai_summary": flag.ai_summary,
+            "matched_phrases": flag.matched_phrases,
+            "flagged_text": flag.flagged_text
+        })

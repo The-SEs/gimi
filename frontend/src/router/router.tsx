@@ -122,8 +122,12 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "guidance",
-        element: <StudentProfilePage />,
+        path: "guidance/:id",
+        element: (
+          <RoleProtectedRoute allowedRoles={["ADMIN", "COUNSELOR"]}>
+            <StudentProfilePage />
+          </RoleProtectedRoute>
+        ),
       },
     ],
   },
