@@ -23,13 +23,20 @@ type Props = {
 }
 
 export default function CounselorFlagCard({ flag, onReview }: Props) {
-  const formattedTime = new Date(flag.timestamp).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })
+  const dateObj = flag.timestamp ? new Date(flag.timestamp) : new Date()
+
+  // Check if parsing actually worked
+  const isValidDate = !isNaN(dateObj.getTime())
+
+  const formattedTime = isValidDate
+    ? dateObj.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : "Recently" // Fallback text for the demo
 
   return (
     <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-gray-200">

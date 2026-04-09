@@ -62,6 +62,15 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "dashboard/alerts/:id",
+        element: (
+          <RoleProtectedRoute allowedRoles={["ADMIN", "COUNSELOR"]}>
+            <StudentProfilePage />{" "}
+            {/* Or your specific Alert Detail component */}
+          </RoleProtectedRoute>
+        ),
+      },
+      {
         path: "journal",
         element: (
           <RoleProtectedRoute allowedRoles={["STUDENT"]}>

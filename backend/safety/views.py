@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from wellness.views import get_smart_snippet
 from users.permissions import IsAdminRole, IsCounselor, IsNurse
 from .models import SafetyFlag
 from django.db.models import Count, Q
@@ -9,23 +10,22 @@ from .models import (
 )
 
 class AdminSafetyFlagsView(APIView):
-    permission_classes = [IsAdminRole | IsCounselor] # Fixed typo 'persmission'
-
     def get(self, request):
         flags = SafetyFlag.objects.select_related('user').order_by('-timestamp')
-
         data = []
         for flag in flags:
+            # Generate snippet on the fly for the dashboard
+            matched = flag.matched_phrases[0] if flag.matched_phrases else ""
+            snippet = get_smart_snippet(flag.flagged_text, matched)
+
             data.append({
                 "id": flag.id,
-                "user_id": flag.user.id, # <--- ADD THIS LINE
+                "user_id": flag.user.id,
                 "user_name": flag.user.username,
                 "user_email": flag.user.email,
-                "flagged_text": flag.flagged_text,
-                "matched_phrases": flag.matched_phrases,
+                "flagged_text": snippet, # <--- The dashboard stays SNIPPED
                 "risk_level": flag.risk_level,
-                "ai_summary": flag.ai_summary,
-                "timestamp": flag.timestamp
+                "timestamp": flag.timestamp.isoformat() # <--- FIXED DATE
             })
         return Response(data)
 class StudentMedicalInfoView(APIView):
@@ -355,24 +355,26 @@ class EmergencyContactView(APIView):
         except EmergencyContact.DoesNotExist:
             return Response({"error": "Contact not found"}, status=404)
 
+# safety/views.py
+
 class StudentSafetySummaryView(APIView):
-    permission_classes = [IsAdminRole | IsCounselor]
-
     def get(self, request, user_id):
-        # IMPORTANT: We filter by 'user_id' (the student), not 'id' (the flag)
-        # Also, use 'user' because that is the field name in your SafetyFlag model
-        flag = SafetyFlag.objects.filter(user_id=user_id).order_of('-timestamp').first()
-
+        flag = SafetyFlag.objects.filter(user_id=user_id).order_by('-timestamp').first()
         if not flag:
-            # If this hits, it means this specific student has 0 flags in the DB
-            return Response({"detail": "No flags found."}, status=404)
+            return Response({"detail": "Not found"}, status=404)
+
+        matched = flag.matched_phrases[0] if flag.matched_phrases else ""
 
         return Response({
-            "id": flag.id,              # The Flag ID
-            "user_id": flag.user.id,    # The Student ID
+            "id": flag.id,
             "user_name": flag.user.username,
             "risk_level": flag.risk_level,
             "ai_summary": flag.ai_summary,
             "matched_phrases": flag.matched_phrases,
-            "flagged_text": flag.flagged_text
+
+            # SEND BOTH SO REACT CAN CHOOSE
+            "full_text": flag.flagged_text,  # <--- FULL CONTENT for Modal
+            "snippet": get_smart_snippet(flag.flagged_text, matched), # <--- SNIPPET for Sidebar
+
+            "timestamp": flag.timestamp.isoformat() # <--- FIXED DATE
         })
