@@ -17,6 +17,7 @@ from .services import analyze_mood, embed_drawing, get_drawing_emotional_analysi
 
 from safety.services import check_journal
 from safety.ai_utils import get_llama_response
+from safety.ai_utils import get_hardcoded_summary
 from safety.models import SafetyFlag
 from wellness.services import embed_drawing
 from asgiref.sync import async_to_sync
@@ -36,33 +37,34 @@ def _save_mood(entry):
     )
 
 
-def get_smart_snippet(full_text, matched_phrase, window=50):
-    """
-    Finds the best part of the student's actual text to show in the pill.
-    """
-    text_lower = full_text.lower()
+def get_smart_snippet(content, matched_phrase, window=50):
+    content_lower = content.lower()
 
-    # 1. Try to find the first word of the matched phrase (e.g., "kill")
-    # This is usually the strongest part of the trigger.
-    trigger_words = matched_phrase.lower().split()
-    search_word = trigger_words[2] if len(trigger_words) > 2 else trigger_words[0]
+    # 1. Try to find the exact phrase first
+    start_index = content_lower.find(matched_phrase.lower())
 
-    start_index = text_lower.find(search_word)
-
-    # 2. If we can't find that word, just take the first part of their message
+    # 2. If exact match fails (common with Vectors), search for key action words
     if start_index == -1:
-        return full_text[:window*2] + "..."
+        keywords = ["kill", "die", "hurt", "suicide", "end it", "over"]
+        for word in keywords:
+            if word in content_lower:
+                start_index = content_lower.find(word)
+                break
 
-    # 3. Calculate the window around the actual word found in the student's text
-    start_pos = max(0, start_index - window)
-    end_pos = min(len(full_text), start_index + len(search_word) + window)
+    # 3. If still not found, just give the start of the text
+    if start_index == -1:
+        return content[:100] + "..."
 
-    snippet = full_text[start_pos:end_pos]
+    # 4. Create the "Center-Cut" snippet
+    start = max(0, start_index - window)
+    end = min(len(content), start_index + len(matched_phrase) + window)
 
-    if start_pos > 0: snippet = "..." + snippet
-    if end_pos < len(full_text): snippet = snippet + "..."
+    snippet = content[start:end].replace('\n', ' ').strip()
 
-    return snippet
+    prefix = "..." if start > 0 else ""
+    suffix = "..." if end < len(content) else ""
+
+    return f"{prefix}{snippet}{suffix}"
 
 # =======================================================
 # Journal
@@ -92,24 +94,46 @@ class JournalListCreateView(generics.ListCreateAPIView):
 
         is_dangerous, matched_phrase, distance = check_journal(content)
 
+        # --- AI Buddy Prompt (For the Student) ---
+        student_buddy_prompt = f"""
+        You are a supportive, empathetic AI companion for an iACADEMY Cebu student.
+        The student just wrote: "{content}"
+        Respond with a short, encouraging reply. DO NOT diagnose them.
+        """
+
         if is_dangerous:
+            # 1. Generate the Clinical Summary for the Counselor
+
+            display_text = get_smart_snippet(content, matched_phrase)
+
+            ai_summary = get_hardcoded_summary(matched_phrase, display_text)
+
+            print("--- AI SUMMARY GENERATED ---")
+            print(ai_summary)
+            print("----------------------------")
+
+            # 2. Generate a sensitive Buddy Response for the student
+            buddy_reply = get_llama_response(student_buddy_prompt)
+
             entry = serializer.save(
                 user=request.user,
-                is_flagged=True
+                is_flagged=True,
+                ai_chat_response=buddy_reply # Save the buddy reply here too!
             )
 
             display_text = get_smart_snippet(content, matched_phrase)
 
-            print(f"DEBUG: Saving this to the pill: {display_text}")
-
+            # 3. Create the Safety Flag with the AI Summary
             SafetyFlag.objects.create(
                 user=request.user,
                 flagged_text=display_text,
                 matched_phrases=[matched_phrase] if matched_phrase else [],
+                ai_summary=ai_summary, # <--- Counselor sees this in the top-left!
                 risk_level="High"
             )
             _save_mood(entry)
 
+            # 4. Trigger the real-time alert for the dashboard
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "guidance_alerts",
@@ -123,13 +147,15 @@ class JournalListCreateView(generics.ListCreateAPIView):
 
             return Response({
                 'status': 'high_risk',
-                'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
+                'ai_response': buddy_reply, # Send the AI buddy reply back
+                'message': "We noticed you're having a tough time. It's okay to reach out.",
                 'id': entry.id,
                 **serializer.data
             }, status=status.HTTP_201_CREATED)
 
         else:
-            ai_reply = get_llama_response(content)
+            # Standard "Not Dangerous" Flow
+            ai_reply = get_llama_response(student_buddy_prompt)
 
             entry = serializer.save(
                 user=request.user,
@@ -178,6 +204,12 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
             entry = serializer.save(is_flagged=True)
 
             display_text = get_smart_snippet(content, matched_phrase)
+            ai_summary = get_hardcoded_summary(matched_phrase, display_text)
+
+            print("--- AI SUMMARY GENERATED ---")
+            print(ai_summary)
+            print("----------------------------")
+
 
             print(f"DEBUG: Saving this to the pill: {display_text}")
 
@@ -185,6 +217,7 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
                 user=request.user,
                 flagged_text=display_text,
                 matched_phrases=[matched_phrase] if matched_phrase else [],
+                ai_summary=ai_summary,
                 risk_level="High"
             )
             _save_mood(entry)
@@ -193,7 +226,7 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
                 'status': 'high_risk',
                 'message': "We noticed that you might be going through a tough time. Would you like to schedule a talk with the school counselor?",
                 'id': entry.id,
-                **serializer.data 
+                **serializer.data
             }, status=status.HTTP_200_OK)
 
         else:
@@ -271,7 +304,7 @@ def mood_summary(request):
             return Response({"detail": "Please provide a student_id parameter."}, status=400)
     else:
         moods = UserMood.objects.filter(user=request.user)
-        
+
     breakdown = moods.values("mood_label").annotate(count=Count("id")).order_by("-count")
     return Response({"total": moods.count(), "breakdown": list(breakdown)})
 
@@ -305,7 +338,7 @@ class DailyMoodListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         state = serializer.validated_data["state"]
         user = request.user
-        
+
         today = timezone.localdate()
 
         with transaction.atomic():

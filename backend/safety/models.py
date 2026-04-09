@@ -25,6 +25,8 @@ class SafetyFlag(models.Model):
 
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    ai_summary = models.TextField(blank=True, null=True)
+
     def __str__(self):
         return f"Flag for {self.user.username} at {self.timestamp}"
 
