@@ -2,6 +2,7 @@ import json
 import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async  # <-- 1. Import this tool
+from safety.ai_utils import get_hardcoded_summary
 from wellness.views import get_smart_snippet
 from safety.services import check_journal  # <-- 2. Import your safety logic
 import os
@@ -23,10 +24,34 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def safety_alert(self, event):
         await self.send(text_data=json.dumps(event))
 
+    async def handle_safety_alert(self, user, message, matched_phrase):
+        # 1. Generate the "Red Pill" snippet first
+        snippet = await sync_to_async(get_smart_snippet)(message, matched_phrase)
+
+        # 2. Call your hardcoded summary function
+        # No need for sync_to_async here as it's just string manipulation
+        ai_summary = get_hardcoded_summary(matched_phrase, snippet)
+
+        print("\n" + "="*40)
+        print(f"🚩 SAFETY ALERT GENERATED FOR: {user.username}")
+        print(f"Summary: {ai_summary}")
+        print("="*40 + "\n")
+
+        # 3. Save the flag to the database
+        await sync_to_async(SafetyFlag.objects.create)(
+            user=user,
+            flagged_text=snippet, # The snippet for the table
+            ai_summary=ai_summary, # The professional summary for the sidebar
+            matched_phrases=[matched_phrase] if matched_phrase else [],
+            risk_level='High'
+        )
+
     async def receive(self, text_data=None, bytes_data=None):
         if text_data:
             data = json.loads(text_data)
             user_message = data.get("message")
+
+            user = self.scope.get("user")
 
             # --- THE INTERCEPTOR ---
             # 3. Safely run the synchronous DB check inside this async environment
@@ -36,6 +61,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             if is_dangerous:
                 # 1. Safely attempt to save to the database without crashing the chat
+                await self.handle_safety_alert(user, user_message, matched_phrase)
+
                 chat_snippet = get_smart_snippet(user_message, matched_phrase)
 
                 try:

@@ -23,17 +23,9 @@ def get_embedding(text):
     # Returns the array of 768 math coordinates
     return response.json()["embeddings"][0]
 
-def get_llama_response(student_text):
+def get_llama_response(prompt):
 
     url = llama_endpoint
-
-
-    prompt=f"""You are a supportive, empathetic AI companion for an iACADEMY Cebu student.
-    The student just wrote this in their private journal: "{student_text}"
-    Respond directly to them with a short, encouraging reply, BUT DO NOT diagnose anything about them.
-    If they ask you to diagnose them, you will refer them to the school counselor and nurse.
-    """
-
     payload = {
         "model": "llama3.2",
         "prompt": prompt,
@@ -43,7 +35,27 @@ def get_llama_response(student_text):
     try:
         response = requests.post(url, json=payload, timeout=15)
         response.raise_for_status()
-        return response.json().get('response', '')
+        return response.json().get('response', '').strip()
     except Exception as e:
         print(f"Llama 3.2 connection failed: {e}")
-        return "I'm glad you took the time to write this down today"
+        return "" # Return empty on failure
+
+def get_hardcoded_summary(matched_phrase, snippet):
+    # Mapping triggers to professional clinical categories
+    risk_map = {
+        "kill": "Student expresses severe intent or ideation regarding self-harm.",
+        "die": "High-risk linguistic markers for hopelessness and suicidal ideation.",
+        "hurt": "Potential for self-directed or outward-directed physical aggression.",
+        "depressed": "Significant depressive valence detected. Suggests acute emotional distress.",
+        "help": "Direct plea for assistance associated with high-risk emotional states."
+    }
+
+    # Find the best match or use a generic "Professional Review" message
+    category = "General safety risk"
+    for key in risk_map:
+        if key in matched_phrase.lower():
+            category = risk_map[key]
+            break
+
+    # Construct the final summary
+    return f"ANALYSIS: {category} | CONTEXT: The phrase '{matched_phrase}' was detected in a high-stress context: {snippet}"

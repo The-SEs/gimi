@@ -4,7 +4,7 @@ from users.permissions import IsAdminRole, IsCounselor, IsNurse
 from .models import SafetyFlag
 from django.db.models import Count, Q
 from .models import (
-    SafetyFlag, EmergencyContact, StudentMedicalInfo, 
+    SafetyFlag, EmergencyContact, StudentMedicalInfo,
     ActiveCondition, MedicationRecord, HospitalizationHistory, NurseLogEntry
 )
 
@@ -23,6 +23,7 @@ class AdminSafetyFlagsView(APIView):
                 "flagged_text": flag.flagged_text,
                 "matched_phrases": flag.matched_phrases,
                 "risk_level": flag.risk_level,
+                "ai_summary": flag.ai_summary,
                 "timestamp": flag.timestamp
             })
 
@@ -191,7 +192,7 @@ class HighRiskStudentsView(APIView):
     def get(self, request):
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        
+
         # Get users who have at least one 'High' risk level flag (case insensitive)
         users_with_high_risk = SafetyFlag.objects.filter(risk_level__iexact='High')\
             .values('user')\
@@ -208,14 +209,14 @@ class HighRiskStudentsView(APIView):
 
             # Get all 'High' risk flags for this user to aggregate keywords
             user_flags = SafetyFlag.objects.filter(user=user, risk_level__iexact='High').order_by('-timestamp')
-            
+
             all_keywords = []
             flag_history = []
-            
+
             for f in user_flags:
                 if f.matched_phrases:
                     all_keywords.extend(f.matched_phrases)
-                
+
                 flag_history.append({
                     "id": f"alert-{f.id}",
                     "label": f"Keyword Trigger: {f.flagged_text[:30]}...",
@@ -246,7 +247,7 @@ class HighRiskStudentsView(APIView):
                 "description": c.description,
                 "severity": c.severity
             } for c in ActiveCondition.objects.filter(user=user)]
-            
+
             medications = [{
                 "id": m.id,
                 "name": m.name,
@@ -254,7 +255,7 @@ class HighRiskStudentsView(APIView):
                 "frequency": m.frequency,
                 "isActive": m.is_active
             } for m in MedicationRecord.objects.filter(user=user)]
-            
+
             h_history = [{
                 "id": h.id,
                 "date": h.date_range,
@@ -263,7 +264,7 @@ class HighRiskStudentsView(APIView):
                 "description": h.description,
                 "level": h.level
             } for h in HospitalizationHistory.objects.filter(user=user)]
-            
+
             nurse_logs = [{
                 "date": l.created_at.strftime("%b %d • %I:%M %p").upper(),
                 "title": l.reason,
