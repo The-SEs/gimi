@@ -20,10 +20,12 @@ export interface StudentSecurityCase {
   email: string;
   age: string;
   sex: string;
+  program: string;
   pronouns: string;
   studentNumber: string;
   riskLevel: "HIGH" | "MEDIUM" | "LOW";
   summary: string;
+  lastSeen: string;
   detectedKeywords: string[];
   alertHistory: AlertHistoryItem[];
   emergencyContacts: EmergencyContact[];

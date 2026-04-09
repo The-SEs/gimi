@@ -1,6 +1,8 @@
 import type { StudentSecurityCase } from "./types";
 
 export const studentCase: StudentSecurityCase = {
+  id: "STU-001",
+  email: "student@example.com",
   name: "Zoie Estorba",
   age: "56 yrs old",
   sex: "Female",

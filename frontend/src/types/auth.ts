@@ -75,10 +75,14 @@ export interface AuthState {
 }
 
 export interface AuthContextValue extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (
+    credentials: LoginCredentials,
+  ) => Promise<{ access: string; user: User }>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  loginWithGoogle: (googleAccessToken: string) => Promise<void>;
+  loginWithGoogle: (
+    googleAccessToken: string,
+  ) => Promise<{ access: string; user: User }>;
 
   // Manually refresh access token. Used by axios interceptor
   refreshAccessToken: () => Promise<string | null>;
