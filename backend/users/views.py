@@ -9,11 +9,14 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser, PasswordResetCode
 from .permissions import IsStudent, IsNurse, IsSecurity, IsCounselor, IsAdminRole
+import os
 
 # Create your views here.
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 class RequestResetCodeView(APIView):
     def post(self, request):
@@ -22,7 +25,7 @@ class RequestResetCodeView(APIView):
             user = CustomUser.objects.get(email=email)
             reset_obj, _ = PasswordResetCode.objects.get_or_create(user=user)
             code = reset_obj.generate_code()
-            
+
             send_mail(
                 'Your Gimi Password Reset Code',
                 f'Your 4-digit reset code is: {code}. It expires in 15 minutes.',
@@ -32,7 +35,7 @@ class RequestResetCodeView(APIView):
             )
         except CustomUser.DoesNotExist:
             pass
-            
+
         return Response({"detail": "If the email exists, a code was sent."}, status=status.HTTP_200_OK)
 
 class VerifyResetCodeView(APIView):
@@ -42,7 +45,7 @@ class VerifyResetCodeView(APIView):
         try:
             user = CustomUser.objects.get(email=email)
             reset_obj = PasswordResetCode.objects.get(user=user, code=code)
-            
+
             if reset_obj.is_valid():
                 return Response({"detail": "Code is valid."}, status=status.HTTP_200_OK)
             return Response({"error": "Code has expired."}, status=status.HTTP_400_BAD_REQUEST)
@@ -54,11 +57,11 @@ class ResetPasswordView(APIView):
         email = request.data.get('email')
         code = request.data.get('code')
         new_password = request.data.get('new_password')
-        
+
         try:
             user = CustomUser.objects.get(email=email)
             reset_obj = PasswordResetCode.objects.get(user=user, code=code)
-            
+
             if reset_obj.is_valid():
                 user.set_password(new_password)
                 user.save()
