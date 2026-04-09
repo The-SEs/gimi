@@ -39,13 +39,25 @@ class StudentTrackSerializer(serializers.ModelSerializer):
 
 class StudentPhotoSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    image = serializers.ImageField(write_only=True)
 
     class Meta:
         model = StudentPhoto
-        fields = ["id", "image_url", "caption", "uploaded_at"]
+        fields = ["id", "image", "image_url", "caption", "uploaded_at"]
 
     def get_image_url(self, obj):
-        request = self.context.get("request")
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
+        import base64
+        if obj.image_data:
+            b64 = base64.b64encode(bytes(obj.image_data)).decode("utf-8")
+            return f"data:{obj.mime_type};base64,{b64}"
         return None
+
+    def create(self, validated_data):
+        image_file = validated_data.pop("image")
+        mime_type = image_file.content_type or "image/jpeg"
+        image_data = image_file.read()
+        return StudentPhoto.objects.create(
+            image_data=image_data,
+            mime_type=mime_type,
+            **validated_data
+        )

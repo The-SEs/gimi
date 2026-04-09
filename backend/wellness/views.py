@@ -478,15 +478,15 @@ class StudentPhotoView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        if StudentPhoto.objects.filter(user=request.user).count() >=4:
+        if StudentPhoto.objects.filter(user=request.user).count() >= 4:
             return Response(
-                {"detail": "Maximum of 4 photos allowed. "},
-                status = status.HTTP_400_BAD_REQUEST
+                {"detail": "Maximum of 4 photos allowed."},
+                status=status.HTTP_400_BAD_REQUEST
             )
         serializer = StudentPhotoSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(user=request.user)
-            return Response(serializer.data, status = status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, photo_id):
@@ -497,29 +497,28 @@ class StudentPhotoView(APIView):
         except StudentPhoto.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
+
 class AdminStudentPhotoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
-        photos = StudentPhoto.objects.filter(user__id = user_id)
+        photos = StudentPhoto.objects.filter(user__id=user_id)
         serializer = StudentPhotoSerializer(photos, many=True, context={"request": request})
         return Response(serializer.data)
+
 
 class StudentPhotoReplaceView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        #replace oldest photo when they upload and at maxcapacity
         photos = StudentPhoto.objects.filter(user=request.user).order_by("uploaded_at")
         if photos.count() < 4:
             return Response(
-                {"detail": "fewer than 4 photos use the regular upload endpoint."},
+                {"detail": "Fewer than 4 photos, use the regular upload endpoint."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        oldest = photos.first()
-        oldest.image.delete(save=False)
-        oldest.delete()
+        photos.first().delete()
 
         serializer = StudentPhotoSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():

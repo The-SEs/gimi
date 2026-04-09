@@ -10,6 +10,7 @@ import { useAuth } from "../../hooks/useAuth.ts";
 import { Link } from "react-router-dom";
 import PlaylistManager from "../../components/widget/playlistManager.tsx";
 
+
 export default function DashboardPage() {
   const { user } = useAuth();
   return (

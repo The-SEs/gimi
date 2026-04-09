@@ -7,6 +7,14 @@ import StudentIdentityWidget from "../../components/admin-guidance-widget/studen
 import ConsultationHistoryWidget from "../../components/admin-guidance-widget/consultation.tsx"
 import MedicalDataWidget from "../../components/admin-guidance-widget/medicalData.tsx"
 import CounselorFlagCard from "../../components/widget/counselorFlagCard.tsx"
+import StudentPhotosWidget from "../../components/admin-guidance-widget/studentPhotos.tsx"
+
+type Photo ={
+  id: number
+  image_url: string
+  caption: string
+  uploaded_at: string
+}
 
 export default function StudentProfilePage() {
   const { id } = useParams()
@@ -17,6 +25,7 @@ export default function StudentProfilePage() {
   const [conditions, setConditions] = useState<any[]>([])
   const [medications, setMedications] = useState<any[]>([])
   const [hospitalization, setHospitalization] = useState<any[]>([])
+  const [photos, setPhotos] = useState<Photo[]>([])
 
   // UI States
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -31,11 +40,13 @@ export default function StudentProfilePage() {
     const fetchAllData = async () => {
       setIsLoading(true)
       try {
-        const [safetyRes, condRes, medRes, hospRes] = await Promise.all([
+        // Run all fetches in parallel for speed
+        const [safetyRes, condRes, medRes, hospRes, photosRes] = await Promise.all([
           api.get(`/api/safety/admin/flags/student/${id}/`),
           api.get(`/api/safety/admin/conditions/${id}/`),
           api.get(`/api/safety/admin/medications/${id}/`),
           api.get(`/api/safety/admin/hospitalization/${id}/`),
+          api.get(`/api/wellness/admin/students/${id}/photos/`),
         ])
 
         setAllFlags(safetyRes.data)
@@ -43,6 +54,7 @@ export default function StudentProfilePage() {
         setConditions(condRes.data)
         setMedications(medRes.data)
         setHospitalization(hospRes.data)
+        setPhotos(photosRes.data)
       } catch (error) {
         console.error("Error loading student data:", error)
       } finally {
@@ -126,6 +138,7 @@ export default function StudentProfilePage() {
           )}
 
           <StudentIdentityWidget data={selectedFlag} />
+          <StudentPhotosWidget photos={photos} />
           <ConsultationHistoryWidget />
 
           {selectedFlag && (
