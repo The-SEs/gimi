@@ -7,22 +7,24 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
 
+
 @database_sync_to_async
 def get_user_from_jwt(token_key):
     try:
         # Decode the JWT found in the cookie
         access_token = AccessToken(token_key)
-        user = User.objects.get(id=access_token['user_id'])
+        user = User.objects.get(id=access_token["user_id"])
         print(f"✅ SUCCESS: WebSocket authenticated as {user.email}")
         return user
     except Exception as e:
         print(f"❌ JWT ERROR: {e}")
         return AnonymousUser()
 
+
 class TokenAuthMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
         # 1. Look for the 'cookie' header in the WebSocket handshake
-        headers = dict(scope.get("headers", [b'']))
+        headers = dict(scope.get("headers", []))
         cookie_header = headers.get(b"cookie", b"").decode("utf-8")
 
         token_key = None
@@ -40,3 +42,4 @@ class TokenAuthMiddleware(BaseMiddleware):
             scope["user"] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)
+

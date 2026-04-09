@@ -359,22 +359,24 @@ class EmergencyContactView(APIView):
 
 class StudentSafetySummaryView(APIView):
     def get(self, request, user_id):
-        flag = SafetyFlag.objects.filter(user_id=user_id).order_by('-timestamp').first()
-        if not flag:
-            return Response({"detail": "Not found"}, status=404)
+        # 🚩 Fetch EVERY flag for this student, ordered by newest first
+        flags = SafetyFlag.objects.filter(user_id=user_id).order_by('-timestamp')
 
-        matched = flag.matched_phrases[0] if flag.matched_phrases else ""
+        if not flags.exists():
+            return Response({"detail": "No flags found."}, status=404)
 
-        return Response({
-            "id": flag.id,
-            "user_name": flag.user.username,
-            "risk_level": flag.risk_level,
-            "ai_summary": flag.ai_summary,
-            "matched_phrases": flag.matched_phrases,
+        # We return a LIST of alerts, not just one
+        data = []
+        for flag in flags:
+            data.append({
+                "id": flag.id,
+                "timestamp": flag.timestamp.isoformat(),
+                "user_name": flag.user.username,
+                "risk_level": flag.risk_level,
+                "ai_summary": flag.ai_summary,
+                "full_text": flag.flagged_text, # The actual text from THAT day
+                "snippet": get_smart_snippet(flag.flagged_text, flag.matched_phrases[0] if flag.matched_phrases else ""),
+                "source": flag.source
+            })
 
-            # SEND BOTH SO REACT CAN CHOOSE
-            "full_text": flag.flagged_text,  # <--- FULL CONTENT for Modal
-            "snippet": get_smart_snippet(flag.flagged_text, matched), # <--- SNIPPET for Sidebar
-
-            "timestamp": flag.timestamp.isoformat() # <--- FIXED DATE
-        })
+        return Response(data) # Returns [ {Today's}, {Yesterday's}, ... ]

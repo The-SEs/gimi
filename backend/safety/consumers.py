@@ -13,11 +13,11 @@ from safety.models import SafetyFlag
 load_dotenv()
 BASE_URL = os.getenv("OLLAMA_BASE_URL")
 
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-
-        await self.channel_layer.group_add("guidance_alerts", self.channel_name)
         await self.accept()
+        await self.channel_layer.group_add("guidance_alerts", self.channel_name)
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard("guidance_alerts", self.channel_name)
@@ -35,10 +35,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # 🚩 THE FIX: Save 'message' (the full content), NOT 'snippet'
         await sync_to_async(SafetyFlag.objects.create)(
             user=user,
-            flagged_text=message, # <--- Save the WHOLE thing here
+            flagged_text=message,  # <--- Save the WHOLE thing here
             ai_summary=ai_summary,
             matched_phrases=[matched_phrase] if matched_phrase else [],
-            risk_level='High'
+            risk_level='High',
+            source='CHAT'
         )
 
     async def receive(self, text_data=None, bytes_data=None):
@@ -51,35 +52,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # We do this immediately so we never lose what the student said.
             if user and user.is_authenticated:
                 await sync_to_async(ChatMessage.objects.create)(
-                    user=user, sender='user', text=user_message
+                    user=user, sender="user", text=user_message
                 )
             else:
                 print("Warning: Unauthenticated user. Chat message not saved.")
             # ----------------------------------------
 
             # 3. Safely run the synchronous DB check for danger
-            is_dangerous, matched_phrase, distance = await sync_to_async(check_journal)(user_message)
+            is_dangerous, matched_phrase, distance = await sync_to_async(check_journal)(
+                user_message
+            )
 
             if is_dangerous:
                 # Safely attempt to save to the database without crashing the chat
                 if user and user.is_authenticated:
-                     await self.handle_safety_alert(user, user_message, matched_phrase)
+                    await self.handle_safety_alert(user, user_message, matched_phrase)
 
                 # Send warning to frontend
                 warning_message = "We noticed you might be going through a tough time. Would you like to schedule a talk with the school counselor?"
 
                 # --- 2A. SAVE GIMI'S WARNING MESSAGE ---
                 if user and user.is_authenticated:
-                     await sync_to_async(ChatMessage.objects.create)(
-                         user=user, sender='gimi', text=warning_message
-                     )
+                    await sync_to_async(ChatMessage.objects.create)(
+                        user=user, sender="gimi", text=warning_message
+                    )
                 # ---------------------------------------
 
-                await self.send(text_data=json.dumps({
-                    "message": warning_message,
-                    "done": True,
-                    "status": "high_risk"
-                }))
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "message": warning_message,
+                            "done": True,
+                            "status": "high_risk",
+                        }
+                    )
+                )
                 return
 
             # 5. IF SAFE, PROCEED WITH OLLAMA STREAMING
@@ -117,9 +124,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 # This happens after the stream finishes successfully
                 if user and user.is_authenticated:
                     await sync_to_async(ChatMessage.objects.create)(
-                         user=user, sender='gimi', text=full_bot_response
+                        user=user, sender="gimi", text=full_bot_response
                     )
                 # ------------------------------------
 
             except Exception as e:
                 await self.send(text_data=json.dumps({"error": str(e)}))
+

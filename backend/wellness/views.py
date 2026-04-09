@@ -132,7 +132,8 @@ class JournalListCreateView(generics.ListCreateAPIView):
                 flagged_text=content, # <--- Full content saved to DB
                 matched_phrases=[matched_phrase] if matched_phrase else [],
                 ai_summary=ai_summary,
-                risk_level="High"
+                risk_level="High",
+                source='JOURNAL'
             )
             _save_mood(entry)
 
@@ -221,7 +222,8 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
                 flagged_text=content, # <--- Full content saved to DB
                 matched_phrases=[matched_phrase] if matched_phrase else [],
                 ai_summary=ai_summary,
-                risk_level="High"
+                risk_level="High",
+                source='JOURNAL'
             )
             _save_mood(entry)
 

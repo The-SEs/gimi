@@ -159,9 +159,12 @@ SIMPLE_JWT = {
 }
 
 JWT_COOKIE_NAME = "gimi-refresh-token"
-JWT_COOKIE_SECURE = False  # Set to True in production (HTTPS)
+JWT_COOKIE_SECURE = True  # Set to True in production (HTTPS)
 JWT_COOKIE_HTTPONLY = True  # Prevents JavaScript from reading the cookie
 JWT_COOKIE_SAMESITE = "Lax"
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 SOCIALACCOUNT_STORE_TOKENS = True
 LOGIN_REDIRECT_URL = "/callback/"
@@ -243,13 +246,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-MEDIA_URL = "/media/"
-if platform.system() == "Windows" and os.path.exists("E:/"):
-    # This triggers when the backend is running on the school server
-    MEDIA_ROOT = "E:/GIMI_Storage/media/"
-else:
-    # This triggers when you're testing locally on your MacBook
-    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # url to spyke's machine para ai and dapat tailscalers
 LLM_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1/chat/completions"
