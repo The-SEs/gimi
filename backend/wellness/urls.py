@@ -22,7 +22,7 @@ urlpatterns = [
     #photos
     path("photos/", views.StudentPhotoView.as_view(), name="student-photos"),
     path("photos/replace/", views.StudentPhotoReplaceView.as_view(), name="student-photo-replace"),
-    path("photos/<int:photo_id>", views.StudentPhotoView.as_view(), name="student-photo-delete"),
+    path("photos/<int:photo_id>/", views.StudentPhotoView.as_view(), name="student-photo-delete"),
     path("admin/students/<int:user_id>/photos/", views.AdminStudentPhotoView.as_view(), name="admin-student-photos"),
     #chat
     path('chat-history/', views.ChatHistoryView.as_view(), name='chat_history'),

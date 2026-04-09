@@ -7,6 +7,14 @@ import StudentIdentityWidget from "../../components/admin-guidance-widget/studen
 import ConsultationHistoryWidget from "../../components/admin-guidance-widget/consultation.tsx"
 import MedicalDataWidget from "../../components/admin-guidance-widget/medicalData.tsx"
 import CounselorFlagCard from "../../components/widget/counselorFlagCard.tsx"
+import StudentPhotosWidget from "../../components/admin-guidance-widget/studentPhotos.tsx"
+
+type Photo ={
+  id: number
+  image_url: string
+  caption: string
+  uploaded_at: string
+}
 
 export default function StudentProfilePage() {
   const { id } = useParams()
@@ -16,6 +24,7 @@ export default function StudentProfilePage() {
   const [conditions, setConditions] = useState<any[]>([])
   const [medications, setMedications] = useState<any[]>([])
   const [hospitalization, setHospitalization] = useState<any[]>([])
+  const [photos, setPhotos] = useState<Photo[]>([])
 
   // UI States
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -26,17 +35,19 @@ export default function StudentProfilePage() {
       setIsLoading(true)
       try {
         // Run all fetches in parallel for speed
-        const [safetyRes, condRes, medRes, hospRes] = await Promise.all([
+        const [safetyRes, condRes, medRes, hospRes, photosRes] = await Promise.all([
           api.get(`/api/safety/admin/flags/student/${id}/`),
           api.get(`/api/safety/admin/conditions/${id}/`),
           api.get(`/api/safety/admin/medications/${id}/`),
           api.get(`/api/safety/admin/hospitalization/${id}/`),
+          api.get(`/api/wellness/admin/students/${id}/photos/`),
         ])
 
         setSafetyData(safetyRes.data)
         setConditions(condRes.data)
         setMedications(medRes.data)
         setHospitalization(hospRes.data)
+        setPhotos(photosRes.data)
       } catch (error) {
         console.error("Error fetching student profile data:", error)
       } finally {
@@ -53,6 +64,7 @@ export default function StudentProfilePage() {
         {/* LEFT SIDEBAR: Identity & Consultation */}
         <div className="w-full lg:w-95 p-4 md:p-6 lg:border-r lg:border-gray-200 flex flex-col gap-6 shrink-0">
           <StudentIdentityWidget data={safetyData} />
+           <StudentPhotosWidget photos={photos} />
 
           <ConsultationHistoryWidget />
 

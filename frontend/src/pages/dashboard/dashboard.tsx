@@ -10,6 +10,7 @@ import { useAuth } from "../../hooks/useAuth.ts";
 import { Link } from "react-router-dom";
 import PlaylistManager from "../../components/widget/playlistManager.tsx";
 
+
 export default function DashboardPage() {
   const { user } = useAuth();
   return (
@@ -35,7 +36,7 @@ export default function DashboardPage() {
       <div className="mx-auto lg:flex">
         <div className="grid grid-cols-1 mx-15">
           <PlaylistManager />
-          <PictureWidget image={""} />
+          <PictureWidget />
         </div>
         <ScheduleWidgetDesktop />
       </div>
