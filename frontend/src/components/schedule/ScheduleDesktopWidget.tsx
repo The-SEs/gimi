@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 const ScheduleDesktopWidget: React.FC = () => {
+  const auth = useAuth();
+
   // --- Date State ---
   const today = useMemo(() => new Date(), []);
 
@@ -12,10 +15,54 @@ const ScheduleDesktopWidget: React.FC = () => {
   // selectedDate is for the highlight
   const [selectedDate, setSelectedDate] = useState<Date>(today);
 
+  const nickname = auth.user?.username || "there";
+
+  const stickyNoteTemplates = useMemo(
+    () => [
+      "Drink water and take a quick stretch — you’ve got this, {name}.",
+      "Tiny steps count, {name}. Pick one small task and start there.",
+      "Reminder for {name}: take 3 slow breaths. In… out…",
+      "{name}, be kind to yourself today. Progress over perfection.",
+      "Check-in, {name}: have you eaten and rested enough today?",
+    ],
+    [],
+  );
+
+  const initialNote = useMemo(() => {
+    const template = stickyNoteTemplates[0] ?? "Have a good day, {name}.";
+    return template.replace("{name}", nickname);
+  }, [nickname, stickyNoteTemplates]);
+
   // --- Sticky Note State ---
-  const [notes, setNotes] = useState<string[]>([
-    "Don't forget to drink water and take a walk! You're doing great, Abigail! 🌷",
-  ]);
+  const [notes, setNotes] = useState<string[]>([initialNote]);
+
+  const didCycleOnMount = useRef(false);
+
+  // Cycle the default sticky note per page reload (mount).
+  // This only changes the first note (index 0) so user-added notes stay intact.
+  useEffect(() => {
+    if (didCycleOnMount.current) return;
+    if (auth.status !== "authenticated" || !auth.user) return;
+    didCycleOnMount.current = true;
+
+    const key = `stickyNoteIndex:${auth.user.id}`;
+    const prev = Number(sessionStorage.getItem(key) ?? "-1");
+    const next = Number.isFinite(prev) ? prev + 1 : 0;
+    const idx = ((next % stickyNoteTemplates.length) + stickyNoteTemplates.length) % stickyNoteTemplates.length;
+    sessionStorage.setItem(key, String(next));
+
+    const nextNote = (stickyNoteTemplates[idx] ?? "Have a good day, {name}.").replace(
+      "{name}",
+      nickname,
+    );
+
+    setNotes((existing) => {
+      if (existing.length === 0) return [nextNote];
+      const copy = [...existing];
+      copy[0] = nextNote;
+      return copy;
+    });
+  }, [auth.status, auth.user, nickname, stickyNoteTemplates]);
 
   // --- Helper Functions (Requested) ---
   const isToday = (date: Date) => isSameDate(date, today);
@@ -233,7 +280,7 @@ const ScheduleDesktopWidget: React.FC = () => {
           >
             Today's Notes
           </h3>
-          <div className="w-full h-[1px] bg-blue-100 mb-8" />
+          <div className="w-full h-px bg-blue-100 mb-8" />
 
           <div className="space-y-8">
             <EventCard
@@ -298,7 +345,7 @@ const ScheduleDesktopWidget: React.FC = () => {
                     el.style.height = `${el.scrollHeight}px`;
                   }
                 }}
-                className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-y-auto min-h-[6rem] max-h-[200px] placeholder:text-[#c0d4ed]"
+                className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-y-auto min-h-24 max-h-[200px] placeholder:text-[#c0d4ed]"
                 value={note}
                 onChange={(e) => {
                   const target = e.target;
@@ -353,11 +400,11 @@ const EventCard: React.FC<{
 }> = ({ time, title, description, type }) => {
   return (
     <div
-      className={`relative bg-white rounded-3xl p-6 shadow-sm border border-blue-50/50 hover:shadow-md transition-all duration-300 transform ${type === "pin" ? "rotate-[-1deg]" : "rotate-[1deg]"}`}
+      className={`relative bg-white rounded-3xl p-6 shadow-sm border border-blue-50/50 hover:shadow-md transition-all duration-300 transform ${type === "pin" ? "-rotate-1" : "rotate-1"}`}
     >
       {/* Decoration */}
       {type === "tape" && (
-        <div className="absolute -top-4 -right-2 w-16 h-8 bg-[#d0e6ff] opacity-70 rotate-[20deg] shadow-sm rounded-sm" />
+        <div className="absolute -top-4 -right-2 w-16 h-8 bg-[#d0e6ff] opacity-70 rotate-20 shadow-sm rounded-sm" />
       )}
 
       <p className="text-[#4b8df2] text-xs font-bold uppercase tracking-wider mb-2">
