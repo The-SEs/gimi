@@ -1,12 +1,8 @@
-import journalIcon from "../../assets/journal-icon.svg"
+import journalIcon from "../../assets/journal-icon.svg";
 
-type JournalWidgetProps = {
-  className?: string
-}
-
-export default function JournalWidget({ className = "" }: JournalWidgetProps) {
+export default function JournalWidget() {
   return (
-    <div className="bg-white w-full rounded-xl flex gap-5 px-5 py-3 items-center shadow-sm ${className}">
+    <div className="bg-white w-full rounded-2xl flex gap-5 px-5 py-5 items-center shadow-sm ">
       <div>
         <img src={journalIcon} alt="" />
       </div>
@@ -16,5 +12,5 @@ export default function JournalWidget({ className = "" }: JournalWidgetProps) {
         <p className="text-sm text-[#6B7280]">Record your day</p>
       </div>
     </div>
-  )
+  );
 }

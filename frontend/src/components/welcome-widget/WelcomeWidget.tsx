@@ -1,38 +1,38 @@
-import welcomeIcon from "../../assets/welcome-icon.svg"
-import lgWelcomeIcon from "../../assets/lg-welcome-icon.svg"
-import { useEffect, useState } from "react"
+import welcomeIcon from "../../assets/welcome-icon.svg";
+import lgWelcomeIcon from "../../assets/lg-welcome-icon.svg";
+import { useEffect, useState } from "react";
 
 type WelcomeWidgetProps = {
-  className?: string
-  name?: string
-}
+  className?: string;
+  name?: string;
+};
 export default function WelcomeWidget({
   className = "",
   name = "Student",
 }: WelcomeWidgetProps) {
-  const today = new Date()
+  const today = new Date();
   const formattedDate = today.toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
     day: "numeric",
-  })
+  });
 
   const [isBiggerScreen, setIsBiggerScreen] = useState(
     window.innerWidth >= 1024,
-  )
+  );
 
   useEffect(() => {
     const handleResize = () => {
-      setIsBiggerScreen(window.innerWidth >= 1024)
-    }
+      setIsBiggerScreen(window.innerWidth >= 1024);
+    };
 
-    window.addEventListener("resize", handleResize)
+    window.addEventListener("resize", handleResize);
 
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <div className="relative overflow-hidden bg-white p-6 pb-20 mb-10 mt-5 rounded-xl w-[90%] mx-auto lg:w-[55%] lg:pb-35 lg:rounded-3xl xl:w-[65%] xl:pb-35">
+    <div className="relative overflow-hidden bg-white p-6 pb-20 mb-10 mt-0 rounded-xl w-full mx-6  lg:pb-35 lg:rounded-3xl  xl:pb-35">
       <div className="flex flex-col gap-1">
         <p className="font-varela text-[#1E40AF] lg:text-[18px] lg:text-[#0C1326]">
           {formattedDate}
@@ -56,5 +56,5 @@ export default function WelcomeWidget({
             ${isBiggerScreen ? "top-10 right-10 w-24 h-24" : "bottom-2 right-2 w-16 h-16"}`}
       />
     </div>
-  )
+  );
 }
