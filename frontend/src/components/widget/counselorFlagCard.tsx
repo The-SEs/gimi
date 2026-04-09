@@ -75,8 +75,8 @@ export default function CounselorFlagCard({ flag, onReview }: Props) {
             {flag.ai_summary}
           </p>
 
-          {flag.matched_phrases.length > 0 && (
-            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-gray-500">
+          {flag.matched_phrases && flag.matched_phrases.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-blue-600">
               Trigger phrase:
               <span className="rounded bg-[#ffd5de]/50 px-2 py-0.5 text-[#844250] ring-1 ring-[#f3a9b7]">
                 "{flag.matched_phrases[0]}"
