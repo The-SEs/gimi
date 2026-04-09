@@ -121,7 +121,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://gimi.qzz.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://gimi.qzz.io",
 ]
+
+CSRF_TRUSTED_ORIGINS = ["https://gimi.qzz.io"]
 
 CORS_ALLOW_CREDENTIALS = True
 
