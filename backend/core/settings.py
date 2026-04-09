@@ -34,8 +34,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -111,9 +109,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 ASGI_APPLICATION = "core.asgi.application"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "100.93.60.3", "100.100.111.14"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "100.93.60.3",
+    "100.100.111.14",
+    "gimi.qzz.io",
+]
 
 CORS_ALLOWED_ORIGINS = [
+    "https://gimi.qzz.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -178,7 +183,7 @@ AUTH_USER_MODEL = "users.CustomUser"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = {"email"}
 SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
@@ -206,9 +211,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.environ.get("REDIS_HOST", "redis"), 6379)],
+        },
     },
 }
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -228,19 +241,21 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 MEDIA_URL = "/media/"
-if platform.system() == 'Windows' and os.path.exists('E:/'):
+if platform.system() == "Windows" and os.path.exists("E:/"):
     # This triggers when the backend is running on the school server
-    MEDIA_ROOT = 'E:/GIMI_Storage/media/'
+    MEDIA_ROOT = "E:/GIMI_Storage/media/"
 else:
     # This triggers when you're testing locally on your MacBook
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 # url to spyke's machine para ai and dapat tailscalers
-LLM_BASE_URL = "http:100.100.111.14/v1/chat/completions"
+LLM_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1/chat/completions"
+)
 
 # allow cookies to be sent cross-origin in development
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
-JWT_AUTH_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+JWT_AUTH_SAMESITE = "Lax"
 
 # Make sure this is False for local development (HTTP)
 JWT_AUTH_SECURE = False

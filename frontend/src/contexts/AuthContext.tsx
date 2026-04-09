@@ -7,7 +7,7 @@ import React, {
 } from "react";
 
 import { authService } from "../services/authService";
-import { setAccessToken, getAccessToken } from "../services/api";
+import { setAccessToken } from "../services/api";
 import type {
   AuthContextValue,
   AuthState,
@@ -16,11 +16,9 @@ import type {
 } from "../types/auth";
 
 // Context
-
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 // Provider
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -30,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // We need a stable ref to refreshAccessToken so the token-expired event
   // listener doesn't capture a stale closure.
-  const refreshRef = useRef<() => Promise<string | null>>();
+  const refreshRef = useRef<() => Promise<string | null> | null>(null);
 
   // Silent session restore
   // On app boot we try to get a new access token using the httpOnly cookie.
@@ -82,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await authService.login(credentials);
       setAccessToken(data.access);
 
-      const {api} = await import("../services/api");
+      const { api } = await import("../services/api");
       const { data: user } = await api.get("/api/auth/user/");
 
       setState({
@@ -91,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status: "authenticated",
       });
 
-      return { access: data.access, user}
+      return { access: data.access, user };
     } catch (err) {
       setState((s) => ({ ...s, status: "unauthenticated" }));
       throw err; // re-throw so LoginPage can show the error
@@ -103,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authService.register(credentials);
       setAccessToken(data.access);
-      const {api} = await import("../services/api");
+      const { api } = await import("../services/api");
       const { data: user } = await api.get("/api/auth/user/");
 
       setState({
@@ -133,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await authService.loginWithGoogle(token);
       setAccessToken(data.access);
 
-      const {api} = await import("../services/api");
+      const { api } = await import("../services/api");
       const { data: user } = await api.get("/api/auth/user/");
 
       setState({
@@ -142,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status: "authenticated",
       });
 
-      return { access: data.access, user}
+      return { access: data.access, user };
     } catch (err) {
       setState((s) => ({ ...s, status: "unauthenticated" }));
       throw err;

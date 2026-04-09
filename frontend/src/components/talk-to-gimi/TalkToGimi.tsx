@@ -29,7 +29,7 @@ export default function TalkToGimi({
         onClick
           ? "cursor-pointer transition-transform duration-150 active:scale-[0.98]"
           : ""
-      }`}
+      } ${className}`}
     >
       {/* Icon container */}
       <div className="shrink-0 rounded-[14px] bg-[#DBEAFE] p-3 sm:p-3.5">

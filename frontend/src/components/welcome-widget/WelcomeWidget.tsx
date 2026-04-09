@@ -32,7 +32,9 @@ export default function WelcomeWidget({
   }, []);
 
   return (
-    <div className="relative overflow-hidden bg-white p-6 pb-20 mb-10 mt-0 rounded-xl w-full mx-6  lg:pb-35 lg:rounded-3xl  xl:pb-35">
+    <div
+      className={`relative overflow-hidden bg-white p-6 pb-20 mb-10 mt-5 rounded-xl w-[90%] mx-auto lg:w-[55%] lg:pb-35 lg:rounded-3xl xl:w-[65%] xl:pb-35 ${className}`}
+    >
       <div className="flex flex-col gap-1">
         <p className="font-varela text-[#1E40AF] lg:text-[18px] lg:text-[#0C1326]">
           {formattedDate}

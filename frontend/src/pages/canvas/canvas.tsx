@@ -18,8 +18,13 @@ export default function CanvasPage() {
             <MoodBoard />
           </div>
           <div className="w-full rounded-xl p-4 flex flex-col gap-6 items-center">
-            <MusicPlayer />
-            <PictureWidget />
+            <MusicPlayer
+              title="Unknown"
+              audioUrl=""
+              onNext={() => {}}
+              onPrev={() => {}}
+            />
+            <PictureWidget image="" />
           </div>
         </div>
 
