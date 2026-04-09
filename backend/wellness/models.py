@@ -4,8 +4,9 @@ from pgvector.django import VectorField
 from users.models import CustomUser
 from django.core.exceptions import ValidationError
 
+
 class DailyMood(models.Model):
-    #manual daily mood log once a day
+    # manual daily mood log once a day
     class MoodState(models.TextChoices):
         HAPPY = "HP", "Happy"
         SAD = "SD", "Sad"
@@ -19,8 +20,6 @@ class DailyMood(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     state = models.CharField(max_length=2, choices=MoodState.choices)
 
-
-
     class Meta:
         unique_together = ["user", "date"]
 
@@ -29,7 +28,7 @@ class DailyMood(models.Model):
 
 
 class JournalEntry(models.Model):
-    #written journal entry trigger ai analysis on save hopefully
+    # written journal entry trigger ai analysis on save hopefully
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="journals"
     )
@@ -49,11 +48,16 @@ class JournalEntry(models.Model):
 
 
 class UserMood(models.Model):
-    #mood analyzed by ai
+    # mood analyzed by ai
     MOOD_CHOICES = [
-        ("happy", "Happy"), ("sad", "Sad"), ("anxious", "Anxious"),
-        ("calm", "Calm"), ("angry", "Angry"), ("neutral", "Neutral"),
-        ("excited", "Excited"), ("stressed", "Stressed"),
+        ("happy", "Happy"),
+        ("sad", "Sad"),
+        ("anxious", "Anxious"),
+        ("calm", "Calm"),
+        ("angry", "Angry"),
+        ("neutral", "Neutral"),
+        ("excited", "Excited"),
+        ("stressed", "Stressed"),
     ]
 
     user = models.ForeignKey(
@@ -76,7 +80,7 @@ class UserMood(models.Model):
 
 
 class VectorDrawing(models.Model):
-    #canvas drawing
+    # canvas drawing
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="drawings"
     )
@@ -84,10 +88,11 @@ class VectorDrawing(models.Model):
     canvas_data = models.JSONField(default=dict)
     image_b64 = models.TextField(blank=True)
     embedding = VectorField(dimensions=512, null=True, blank=True)
-    emotional_analysis = models.JSONField(null=True, blank=True)  # LLM emotional analysis
+    emotional_analysis = models.JSONField(
+        null=True, blank=True
+    )  # LLM emotional analysis
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
 
     class Meta:
         ordering = ["-created_at"]
@@ -95,10 +100,13 @@ class VectorDrawing(models.Model):
     def __str__(self):
         return f"Drawing by {self.user.email} on {self.created_at.date()}"
 
+
 class StudentTrack(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='music_tracks')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="music_tracks"
+    )
     title = models.CharField(max_length=200)
-    audio_file = models.FileField(upload_to='tracks/%Y/%m/%d/', null=True, blank=True)
+    audio_file = models.FileField(upload_to="tracks/%Y/%m/%d/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -108,10 +116,10 @@ class StudentTrack(models.Model):
 class StudentPhoto(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete = models.CASCADE,
-        realted_name = "photos",
+        on_delete=models.CASCADE,
+        related_name="photos",
     )
-    image = models.ImageField(upload_to = "student_photos/%Y/%m/%d/")
+    image = models.ImageField(upload_to="student_photos/%Y/%m/%d/")
     caption = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -119,12 +127,8 @@ class StudentPhoto(models.Model):
         ordering = ["uploaded_at"]
 
     def clean(self):
-        if (
-                StudentPhoto.objects.filter(user=self.user).count() >= 4
-                and not self.pk
-        ):
+        if StudentPhoto.objects.filter(user=self.user).count() >= 4 and not self.pk:
             raise ValidaitonError("Maximum of 4 photos only.")
-
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -132,7 +136,8 @@ class StudentPhoto(models.Model):
 
     def __str__(self):
         return f"Photo by {self.user.email} on {self.uploaded_at.date()}"
-      
+
+
 class ChatMessage(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     sender = models.CharField(max_length=20)
