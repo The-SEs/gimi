@@ -1,8 +1,8 @@
-import SketchbookCanvas from "../../components/canvas-widget/SketchbookCanvas";
-import GimiHeadIcon from "../../components/gimi-action-button/gimi-button";
-import MoodBoard from "../../components/mood-widget/MoodBoard";
-import MusicPlayer from "../../components/widget/musicWidget";
-import PictureWidget from "../../components/widget/pictureWidget";
+import SketchbookCanvas from "../../components/canvas-widget/SketchbookCanvas"
+import GimiHeadIcon from "../../components/gimi-action-button/gimi-button"
+import MoodBoard from "../../components/mood-widget/MoodBoard"
+import PictureWidget from "../../components/widget/pictureWidget"
+import PlaylistManager from "../../components/widget/playlistManager"
 
 export default function CanvasPage() {
   return (
@@ -18,12 +18,7 @@ export default function CanvasPage() {
             <MoodBoard />
           </div>
           <div className="w-full rounded-xl p-4 flex flex-col gap-6 items-center">
-            <MusicPlayer
-              title="Unknown"
-              audioUrl=""
-              onNext={() => {}}
-              onPrev={() => {}}
-            />
+            <PlaylistManager />
             <PictureWidget />
           </div>
         </div>
@@ -34,5 +29,5 @@ export default function CanvasPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
