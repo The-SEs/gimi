@@ -31,7 +31,7 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
     e.preventDefault();
     setErrors({});
 
-    const localErrors: ApiError = {}
+    const localErrors: any = {}
 
     if (password.length < 8) {
       localErrors.password = ["Password must be at least 8 characters long"];
@@ -252,13 +252,13 @@ function RegisterForm({
           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
-          {getFieldError("password") && <p className="mt-1 text-xs text-red-500 ml-1">{getFieldError("password")}</p>}
+          {getFieldError("password1") && <p className="mt-1 text-xs text-red-500 ml-1">{getFieldError("password1")}</p>}
         </div>
 
         <div className="relative">
           <input type={showPassword ? "text" : "password"} placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required
             className="w-full rounded-xl border border-blue-400 bg-white/70 px-4 py-3.5 pr-12 text-gray-700 placeholder-gray-400 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-400 transition" />
-          {getFieldError("password_confirm") && <p className="mt-1 text-xs text-red-500 ml-1">{getFieldError("password_confirm")}</p>}
+          {getFieldError("password2") && <p className="mt-1 text-xs text-red-500 ml-1">{getFieldError("password2")}</p>}
         </div>
 
         <button type="submit" disabled={isSubmitting}
