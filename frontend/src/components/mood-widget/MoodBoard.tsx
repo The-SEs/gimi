@@ -151,7 +151,7 @@ export default function MoodBoard({ className = "" }: MoodBoardProps) {
   return (
     <div className={`relative ${className} mx-6`}>
       <div className="absolute -top-3 left-3/4 -translate-x-1/4 w-20 h-6 bg-blue-300/40 backdrop-blur-[1px] border-l border-r border-white/20 -rotate-2 shadow-sm z-10" />
-      <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4 shadow-sm">
+      <div className="bg-white py-5 px-7 rounded-3xl flex flex-col gap-4 shadow-sm h-[88%]">
         <h2 className="text-2xl text-[#1E40AF] font-bold">Mood of the Day</h2>
 
         <div className="border border-dashed border-[#D0E1FD] rounded-xl flex flex-col gap-1 items-center py-5">

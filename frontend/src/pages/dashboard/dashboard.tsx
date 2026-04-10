@@ -10,7 +10,6 @@ import { useAuth } from "../../hooks/useAuth.ts";
 import { Link } from "react-router-dom";
 import PlaylistManager from "../../components/widget/playlistManager.tsx";
 
-
 export default function DashboardPage() {
   const { user } = useAuth();
   return (
@@ -24,13 +23,13 @@ export default function DashboardPage() {
       </div>
       <div className="flex flex-row mb-10 px-6 gap-x-8">
         <Link to="/journal" className="block flex-1">
-          <JournalWidget />
+          <JournalWidget className="h-full" />
         </Link>
         <Link to="/canvas" className="block flex-1">
           <DoodleWidget className="h-full" />
         </Link>
         <Link to="/chat" className="block flex-1">
-          <TalkToGimi />
+          <TalkToGimi className="h-full" />
         </Link>
       </div>
       <div className="mx-auto lg:flex">
