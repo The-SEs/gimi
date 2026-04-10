@@ -83,3 +83,18 @@ class StudentProfileView(APIView):
 
     def get(self, request):
         return Response({"detail": "Student profile data."}, status=status.HTTP_200_OK)
+
+class UpdateOnboardingStatusView(APIView):
+    permission_classes = [IsAuthenticated, IsStudent]
+
+    def patch(self, request):
+        user = request.user
+        
+        if 'has_accepted_disclaimers' in request.data:
+            user.has_accepted_disclaimers = request.data['has_accepted_disclaimers']
+            
+        if 'has_completed_onboarding' in request.data:
+            user.has_completed_onboarding = request.data['has_completed_onboarding']
+            
+        user.save()
+        return Response({"detail": "Status updated successfully."}, status=status.HTTP_200_OK)

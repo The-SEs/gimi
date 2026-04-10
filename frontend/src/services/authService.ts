@@ -105,4 +105,11 @@ export const authService = {
       new_password 
     })
   },
+
+  updateOnboardingStatus: async (data: { 
+    has_accepted_disclaimers?: boolean; 
+    has_completed_onboarding?: boolean; 
+  }): Promise<void> => {
+    await api.patch("/api/users/onboarding-status/", data)
+  },
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import GimiIcon from "../../assets/GIMI_Icon.svg";
+import { authService } from "../../services/authService";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Answers {
@@ -112,6 +113,18 @@ export default function OnboardingQuestions() {
 
   const totalSlides = flow.length;
   const currentSlide = flow[slideIndex];
+
+  const handleFinish = async () => {
+    try {
+      await authService.updateOnboardingStatus({ has_completed_onboarding: true });
+      
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Failed to update onboarding status:", error);
+      // JUST IN CASE...
+      navigate("/dashboard");
+    }
+  };
 
   const canProceed = () => {
     switch (currentSlide) {
@@ -393,7 +406,7 @@ export default function OnboardingQuestions() {
 
               {/* Next / Finish button */}
               <button
-                onClick={isLastSlide ? () => navigate("/dashboard") : next}
+                onClick={isLastSlide ? handleFinish : next}
                 disabled={!canProceed()}
                 className={`${slideIndex > 0 ? "w-1/2" : "w-full"} rounded-xl py-3.5 text-white font-semibold text-base sm:text-lg transition-all duration-200 hover:brightness-110 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed`}
                 style={{

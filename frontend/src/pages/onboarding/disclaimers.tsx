@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import TermsAndConditions from "../../components/consent-widgets/termsandconditions-modal";
 import Disclaimers from "../../components/consent-widgets/disclaimers-modal";
 import PrivacyPolicy from "../../components/consent-widgets/privacypolicy-modal";
+import { authService } from "../../services/authService";
 
 interface ToggleItem {
   id: string;
@@ -150,9 +151,18 @@ export default function ConsentPage() {
 
   const allChecked = Object.values(toggles).every(Boolean);
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (!allChecked) return;
-    navigate("/dashboard");
+    
+    try {
+      await authService.updateOnboardingStatus({ has_accepted_disclaimers: true });
+      
+      navigate("/onboarding-questions"); 
+    } catch (error) {
+      console.error("Failed to update disclaimer status:", error);
+      // JUST IN CASE...
+      navigate("/onboarding-questions"); 
+    }
   };
 
   const privacyItems: ToggleItem[] = [
