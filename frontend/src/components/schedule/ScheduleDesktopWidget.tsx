@@ -48,13 +48,14 @@ const ScheduleDesktopWidget: React.FC = () => {
     const key = `stickyNoteIndex:${auth.user.id}`;
     const prev = Number(sessionStorage.getItem(key) ?? "-1");
     const next = Number.isFinite(prev) ? prev + 1 : 0;
-    const idx = ((next % stickyNoteTemplates.length) + stickyNoteTemplates.length) % stickyNoteTemplates.length;
+    const idx =
+      ((next % stickyNoteTemplates.length) + stickyNoteTemplates.length) %
+      stickyNoteTemplates.length;
     sessionStorage.setItem(key, String(next));
 
-    const nextNote = (stickyNoteTemplates[idx] ?? "Have a good day, {name}.").replace(
-      "{name}",
-      nickname,
-    );
+    const nextNote = (
+      stickyNoteTemplates[idx] ?? "Have a good day, {name}."
+    ).replace("{name}", nickname);
 
     setNotes((existing) => {
       if (existing.length === 0) return [nextNote];
@@ -150,7 +151,7 @@ const ScheduleDesktopWidget: React.FC = () => {
   const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
-    <div className="relative w-full max-w-[75%] mx-auto bg-[#f0f7ff] p-6 md:p-12 rounded-[40px] shadow-2xl font-sans min-h-[700px]">
+    <div className="relative w-full max-w-[98%] bg-[#f0f7ff] p-6 md:p-12 rounded-2xl shadow-2xl font-sans min-h-[700px]">
       {/* 1. Header Row */}
       <div className="flex justify-between items-center mb-12">
         <h2
@@ -308,9 +309,7 @@ const ScheduleDesktopWidget: React.FC = () => {
 
             <div className="w-full border-2 border-dashed border-[#c0d4ed] rounded-[32px] p-8 md:p-10 relative bg-white/40 group">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-[#9db7e0] font-bold text-xl">
-                  Sticky Note:
-                </p>
+                <p className="text-[#9db7e0] font-bold text-xl">Sticky Note:</p>
                 <button
                   onClick={() => {
                     const newNotes = [...notes];
