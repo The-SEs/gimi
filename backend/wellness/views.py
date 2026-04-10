@@ -530,6 +530,6 @@ class ChatHistoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        messages = ChatMessage.objects.filter(user=request.user)
+        messages = ChatMessage.objects.filter(user=request.user).order_by('created_at')[:50]
         data = [{"sender": msg.sender, "text": msg.text} for msg in messages]
         return Response(data)

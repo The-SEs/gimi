@@ -1,90 +1,106 @@
-import { useState, useEffect, useRef } from "react";
-import { XMarkIcon } from "@heroicons/react/24/outline";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react"
+import { XMarkIcon } from "@heroicons/react/24/outline"
+import { useNavigate } from "react-router-dom"
+import { api } from "../../services/api" // 🚩 Make sure this path is correct for your project!
 
-import GimiChatInput from "./gimiChatInput.tsx";
-import GimiUserChatBubble from "./gimiUserChatBubble.tsx";
-import GimiChatBubble from "./gimiChatBubble.tsx";
+import GimiChatInput from "./gimiChatInput.tsx"
+import GimiUserChatBubble from "./gimiUserChatBubble.tsx"
+import GimiChatBubble from "./gimiChatBubble.tsx"
 
 type GimiChatWindowProps = {
-  className?: string;
-  onClose?: () => void;
-};
+  className?: string
+  onClose?: () => void
+}
 
 type Message = {
-  sender: "user" | "gimi";
-  text: string;
-};
+  sender: "user" | "gimi"
+  text: string
+}
 
 export default function GimiChatWindow({
   className = "",
   onClose,
 }: GimiChatWindowProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const socketRef = useRef<WebSocket | null>(null);
+  const [messages, setMessages] = useState<Message[]>([])
+  const socketRef = useRef<WebSocket | null>(null)
 
   // Initialize the navigate hook
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
+  // 🚩 ADDED: Fetch chat history when the component mounts
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await api.get("/api/wellness/chat-history/")
+        setMessages(response.data)
+      } catch (error) {
+        console.error("Failed to fetch chat history:", error)
+      }
+    }
+
+    fetchHistory()
+  }, []) // Empty array means this runs exactly ONCE when the chat window opens
+
+  // Existing WebSocket connection logic
   useEffect(() => {
     // Dynamically build the WebSocket URL based on the current window location
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/chat/`;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
+    const wsUrl = `${protocol}//${window.location.host}/ws/chat/`
 
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
+    const socket = new WebSocket(wsUrl)
+    socketRef.current = socket
 
     socket.onmessage = (event) => {
-      let chunk = "";
+      let chunk = ""
 
       try {
-        const data = JSON.parse(event.data);
-        chunk = data.message || data.response || data.text || "";
+        const data = JSON.parse(event.data)
+        chunk = data.message || data.response || data.text || ""
       } catch (e) {
-        chunk = event.data;
+        chunk = event.data
       }
 
-      if (!chunk) return;
+      if (!chunk) return
 
       setMessages((prev) => {
-        const lastMessage = prev[prev.length - 1];
+        const lastMessage = prev[prev.length - 1]
 
         if (lastMessage && lastMessage.sender === "gimi") {
-          const updatedMessages = [...prev];
+          const updatedMessages = [...prev]
 
           updatedMessages[updatedMessages.length - 1] = {
             ...lastMessage,
             text: lastMessage.text + chunk,
-          };
+          }
 
-          return updatedMessages;
+          return updatedMessages
         }
 
-        return [...prev, { sender: "gimi", text: chunk }];
-      });
-    };
+        return [...prev, { sender: "gimi", text: chunk }]
+      })
+    }
 
     socket.onerror = (error) => {
-      console.error("WebSocket Error:", error);
-    };
+      console.error("WebSocket Error:", error)
+    }
 
     return () => {
-      socket.close();
-    };
-  }, []);
+      socket.close()
+    }
+  }, [])
 
   const handleSend = (message: string) => {
     setMessages((currentMessages) => [
       ...currentMessages,
       { sender: "user", text: message },
-    ]);
+    ])
 
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ message }));
+      socketRef.current.send(JSON.stringify({ message }))
     } else {
-      console.error("WebSocket is not connected.");
+      console.error("WebSocket is not connected.")
     }
-  };
+  }
 
   return (
     <section
@@ -102,8 +118,8 @@ export default function GimiChatWindow({
         <button
           type="button"
           onClick={() => {
-            if (onClose) onClose();
-            navigate("/dashboard");
+            if (onClose) onClose()
+            navigate("/dashboard")
           }}
           className="flex h-12 w-12 items-center justify-center rounded-full border border-[#f3a9b7] bg-[#ffd5de] text-[#844250] shadow-[0_10px_20px_rgba(246,160,177,0.32)] transition hover:scale-[1.03]"
           aria-label="Close chat window"
@@ -132,5 +148,5 @@ export default function GimiChatWindow({
         </div>
       </div>
     </section>
-  );
+  )
 }
