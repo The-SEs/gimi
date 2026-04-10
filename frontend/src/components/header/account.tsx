@@ -43,8 +43,9 @@ export default function Account({ name = "Student" }: AccountProps) {
     setIsLoggingOut(true)
 
     try {
-      await logout()
-      navigate("/", { replace: true })
+      await logout() 
+      
+      navigate("/", { replace: true }) 
     } finally {
       setIsLoggingOut(false)
       setIsOpen(false)

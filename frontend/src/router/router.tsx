@@ -8,7 +8,7 @@ import LoginPage from "../pages/onboarding/login.tsx"
 import RegisterPage from "../pages/onboarding/register.tsx"
 import DisclaimersPage from "../pages/onboarding/disclaimers.tsx"
 import OnboardingQuestions from "../pages/onboarding/onboarding_questions.tsx"
-import ChatTestPage from "../pages/chat/chatTest.tsx" // ONLY FOR TESTING
+import ChatTestPage from "../pages/chat/chatTest.tsx"
 import JournalPage from "../pages/journal/journal.tsx"
 import CanvasPage from "../pages/canvas/canvas.tsx"
 import NurseAdminPage from "../pages/admin/nurse.tsx"
@@ -33,6 +33,7 @@ export const router = createBrowserRouter([
   { path: "/register", element: <RegisterWrapper /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/disclaimers", element: <DisclaimersPage /> },
+  { path: "/logout", element: <LogoutPage />},
 
   // ====================
   // STUDENT

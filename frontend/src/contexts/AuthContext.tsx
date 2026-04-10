@@ -120,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authService.logout();
     } finally {
-      // Always clear local state, even if the backend call fails
       localStorage.removeItem("access_token");
       setAccessToken(null);
       setState({ user: null, accessToken: null, status: "unauthenticated" });
