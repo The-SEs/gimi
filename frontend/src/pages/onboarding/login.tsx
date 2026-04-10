@@ -18,6 +18,33 @@ export default function LoginPage() {
 
   const isSubmitting = status === "loading" || isGoogleLoading
 
+  const handleRouting = (user: any) => {
+    // 1. Check Disclaimers
+    if (!user.has_accepted_disclaimers) {
+      navigate("/disclaimers")
+      return
+    }
+
+    // 2. Check Onboarding
+    if (!user.has_completed_onboarding) {
+      navigate("/onboarding-questions")
+      return
+    }
+
+    // 3. Normal Role-Based Routing
+    const userRole = String(user.role || "").toUpperCase()
+
+    if (userRole === "STUDENT") {
+      navigate("/dashboard")
+    } else if (userRole === "NURSE") {
+      navigate("/admin/nurse")
+    } else if (userRole === "SECURITY") {
+      navigate("/admin/security")
+    } else {
+      navigate("/admin/dashboard")
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -34,16 +61,8 @@ export default function LoginPage() {
         localStorage.setItem("access_token", response.access)
       }
 
-      const userRole = String(response?.user?.role || "").toUpperCase()
-
-      if (userRole === "STUDENT") {
-        navigate("/dashboard")
-      } else if (userRole === "NURSE") {
-        navigate("/admin/nurse")
-      } else if (userRole === "SECURITY") {
-        navigate("admin/security")
-      } else {
-        navigate("/admin/dashboard")
+      if (response?.user) {
+        handleRouting(response.user)
       }
     } catch (err) {
       if (isAxiosError(err) && err.response?.data) {
@@ -66,7 +85,6 @@ export default function LoginPage() {
         if (response?.access) {
           localStorage.setItem("access_token", response.access)
         }
-        navigate("/onboarding-questions")
       } catch (err) {
         console.error("Django rejected the Google token:", err)
         setError("Google authentication failed. Please try again.")

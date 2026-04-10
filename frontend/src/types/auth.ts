@@ -14,6 +14,8 @@ export interface User {
   date_joined: string;
   provider: AuthProvider;
   avatar: string | null;
+  has_accepted_disclaimers: boolean;
+  has_completed_onboarding: boolean;
 }
 
 // API Request payloads
