@@ -38,6 +38,10 @@ export default function LoginPage() {
 
       if (userRole === "STUDENT") {
         navigate("/dashboard")
+      } else if (userRole === "NURSE") {
+        navigate("/admin/nurse")
+      } else if (userRole === "SECURITY") {
+        navigate("admin/security")
       } else {
         navigate("/admin/dashboard")
       }
