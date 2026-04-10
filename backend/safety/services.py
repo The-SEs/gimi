@@ -27,8 +27,12 @@ def check_journal(student_text):
         if len(sentence.split()) < 2:
             continue
 
+        # 🚩 THE FIX: Convert to lowercase before converting to math!
+        normalized_sentence = sentence.lower()
+
         try:
-            sentence_vector = get_embedding(sentence)
+            # Send the lowercase version to Ollama
+            sentence_vector = get_embedding(normalized_sentence)
         except Exception as e:
             print(f"Failed to connect to AI server: {e}")
             return False, None, None
@@ -53,6 +57,7 @@ def check_journal(student_text):
 
             # If THIS sentence is dangerous, immediately trigger the alert!
             if is_dangerous:
+                # We still print the original 'sentence' so the log shows their exact capitalization
                 print(f"🚨 DANGER FOUND IN SENTENCE: '{sentence}'")
                 print(f"Closest DB Match: '{closest_match.text}' | Distance: {closest_match.distance}")
                 print("-------------------------------\n")
