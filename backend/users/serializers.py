@@ -19,6 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "provider",
             "avatar",
+            "has_accepted_disclaimers",
+            "has_completed_onboarding",
         ]
         read_only_fields = fields
 

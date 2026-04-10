@@ -44,6 +44,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         COUNSELOR = "COUNSELOR", "Counselor"
         ADMIN = "ADMIN", "Admin"
 
+    has_accepted_disclaimers = models.BooleanField(default=False)
+    has_completed_onboarding = models.BooleanField(default=False)
+
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, unique=True)
 
