@@ -1,208 +1,476 @@
-import React, { useState, useMemo, useEffect } from "react";
-import {
-  consultationService,
-  type Consultation,
-} from "../../services/consultationService";
+import React, { useEffect, useMemo, useRef, useState } from "react"
+import { useAuth } from "../../hooks/useAuth"
+import { api } from "../../services/api" // Ensure this matches your project structure
 
-const ScheduleWidget: React.FC = () => {
-  // Use current system time as source
-  const today = useMemo(() => new Date(), []);
-  const [selectedDate, setSelectedDate] = useState<Date>(today);
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const ScheduleDesktopWidget: React.FC = () => {
+  const auth = useAuth()
 
+  // --- Date State ---
+  const today = useMemo(() => new Date(), [])
+  const [viewDate, setViewDate] = useState<Date>(
+    new Date(today.getFullYear(), today.getMonth(), 1),
+  )
+  const [selectedDate, setSelectedDate] = useState<Date>(today)
+
+  // --- Consultation Data State ---
+  const [consultations, setConsultations] = useState<Date[]>([])
+
+  // Fetch real consultations from Django on load
   useEffect(() => {
     const fetchConsultations = async () => {
-      setIsLoading(true);
+      if (auth.status !== "authenticated") return
+
       try {
-        const data = await consultationService.getConsultations();
-        setConsultations(data);
+        const response = await api.get("/api/consultations/")
+
+        // Handle Django Pagination automatically
+        const dataArray = response.data.results
+          ? response.data.results
+          : response.data
+
+        if (!Array.isArray(dataArray)) {
+          console.error("🚨 API did not return an array. Check your endpoint!")
+          return
+        }
+
+        const realDates = dataArray.map((item: any) => {
+          // 1. Grab the date string from Django
+          const dateString =
+            item.requested_date || item.date || item.scheduled_date
+
+          // 2. Safely parse it (fixes timezone shift bugs)
+          const parsedDate = new Date(dateString)
+
+          return new Date(
+            parsedDate.getFullYear(),
+            parsedDate.getMonth(),
+            parsedDate.getDate(),
+          )
+        })
+
+        console.log("✅ Dates successfully loaded into calendar:", realDates)
+        setConsultations(realDates)
       } catch (error) {
-        console.error("Failed to fetch consultations", error);
-      } finally {
-        setIsLoading(false);
+        console.error("❌ Failed to fetch consultations:", error)
       }
-    };
-
-    fetchConsultations();
-
-    window.addEventListener("consultation-added", fetchConsultations);
-    return () =>
-      window.removeEventListener("consultation-added", fetchConsultations);
-  }, []);
-
-  const eventsForSelectedDate = useMemo(() => {
-    return consultations.filter((consultation) => {
-      const eventDate = new Date(consultation.requested_date);
-      return eventDate.toDateString() === selectedDate.toDateString();
-    });
-  }, [consultations, selectedDate]);
-
-  // Helper: Format month name
-  const monthName = today.toLocaleString("default", { month: "long" });
-
-  // Helper: Generate the current week dates (Starting on Saturday)
-  const weekDates = useMemo(() => {
-    const dates: Date[] = [];
-    const current = new Date(today);
-
-    // Day 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    // To get back to Saturday:
-    // If today is Sat (6), subtract 0.
-    // If today is Sun (0), subtract 1.
-    // If today is Mon (1), subtract 2.
-    const dayOfWeek = current.getDay();
-    const daysToSubtract = (dayOfWeek + 1) % 7;
-
-    const startOfWeek = new Date(current);
-    startOfWeek.setDate(current.getDate() - daysToSubtract);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    for (let i = 0; i < 7; i++) {
-      const nextDate = new Date(startOfWeek);
-      nextDate.setDate(startOfWeek.getDate() + i);
-      dates.push(nextDate);
     }
-    return dates;
-  }, [today]);
 
-  // Utility functions
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
+    fetchConsultations()
+  }, [auth.status])
 
-  const isSelected = (date: Date) => {
-    return date.toDateString() === selectedDate.toDateString();
-  };
+  const hasConsultation = (dateToCheck: Date) => {
+    return consultations.some((consultDate) =>
+      isSameDate(consultDate, dateToCheck),
+    )
+  }
 
-  const dayLabels = ["S", "S", "M", "T", "W", "T", "F"]; // Sat, Sun, Mon, Tue, Wed, Thu, Fri
+  const nickname = auth.user?.username || "there"
+
+  const stickyNoteTemplates = useMemo(
+    () => [
+      "Drink water and take a quick stretch — you’ve got this, {name}.",
+      "Tiny steps count, {name}. Pick one small task and start there.",
+      "Reminder for {name}: take 3 slow breaths. In… out…",
+      "{name}, be kind to yourself today. Progress over perfection.",
+      "Check-in, {name}: have you eaten and rested enough today?",
+    ],
+    [],
+  )
+
+  const initialNote = useMemo(() => {
+    const template = stickyNoteTemplates[0] ?? "Have a good day, {name}."
+    return template.replace("{name}", nickname)
+  }, [nickname, stickyNoteTemplates])
+
+  // --- Sticky Note State ---
+  const [notes, setNotes] = useState<string[]>([initialNote])
+
+  const didCycleOnMount = useRef(false)
+
+  useEffect(() => {
+    if (didCycleOnMount.current) return
+    if (auth.status !== "authenticated" || !auth.user) return
+    didCycleOnMount.current = true
+
+    const key = `stickyNoteIndex:${auth.user.id}`
+    const prev = Number(sessionStorage.getItem(key) ?? "-1")
+    const next = Number.isFinite(prev) ? prev + 1 : 0
+    const idx =
+      ((next % stickyNoteTemplates.length) + stickyNoteTemplates.length) %
+      stickyNoteTemplates.length
+    sessionStorage.setItem(key, String(next))
+
+    const nextNote = (
+      stickyNoteTemplates[idx] ?? "Have a good day, {name}."
+    ).replace("{name}", nickname)
+
+    setNotes((existing) => {
+      if (existing.length === 0) return [nextNote]
+      const copy = [...existing]
+      copy[0] = nextNote
+      return copy
+    })
+  }, [auth.status, auth.user, nickname, stickyNoteTemplates])
+
+  // --- Helper Functions ---
+  const isSameDate = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+
+  const isToday = (date: Date) => isSameDate(date, today)
+
+  const getMonthDays = (currentMonth: Date) => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+
+    const firstDayOfMonth = new Date(year, month, 1).getDay()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const daysInPrevMonth = new Date(year, month, 0).getDate()
+
+    const days: { date: Date; isCurrentMonth: boolean }[] = []
+
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      days.push({
+        date: new Date(year, month - 1, daysInPrevMonth - i),
+        isCurrentMonth: false,
+      })
+    }
+
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true,
+      })
+    }
+
+    const totalCells = 42
+    const nextMonthDaysNeeded = totalCells - days.length
+    for (let i = 1; i <= nextMonthDaysNeeded; i++) {
+      days.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false,
+      })
+    }
+
+    return days
+  }
+
+  const calendarData = useMemo(() => getMonthDays(viewDate), [viewDate])
+
+  // --- Handlers ---
+  const handlePrevMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+  }
+
+  const handleNextMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+  }
+
+  const getOrdinalSuffix = (day: number) => {
+    if (day > 3 && day < 21) return "th"
+    switch (day % 10) {
+      case 1:
+        return "st"
+      case 2:
+        return "nd"
+      case 3:
+        return "rd"
+      default:
+        return "th"
+    }
+  }
+
+  // --- Formatting ---
+  const monthName = viewDate.toLocaleString("default", { month: "long" })
+  const viewYear = viewDate.getFullYear()
+
+  const selectedFullDate = `${selectedDate.toLocaleDateString("default", { weekday: "long" })}, ${selectedDate.toLocaleDateString("default", { month: "short" })} ${selectedDate.getDate()}${getOrdinalSuffix(selectedDate.getDate())}`
+
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
 
   return (
-    <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden p-6 md:p-8">
-      {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-gray-400 font-bold tracking-wider text-sm md:text-base">
-          WEEKLY FLOW
+    <div className="relative w-full max-w-[98%] bg-[#f0f7ff] p-6 md:p-12 rounded-2xl shadow-2xl font-sans min-h-[700px]">
+      {/* 1. Header Row */}
+      <div className="flex justify-between items-center mb-12">
+        <h2
+          className="text-[#2d5a9e] text-4xl font-bold tracking-tight"
+          style={{ fontFamily: '"Gloria Hallelujah", cursive' }}
+        >
+          Our Schedule
         </h2>
-        <span className="text-blue-600 font-semibold text-sm md:text-base">
-          {monthName}
+        <span className="text-[#4b8df2] text-xl font-medium">
+          {selectedFullDate}
         </span>
       </div>
 
-      {/* Days of the Week Labels */}
-      <div className="grid grid-cols-7 text-center mb-2">
-        {dayLabels.map((label, idx) => (
-          <div
-            key={`${label}-${idx}`}
-            className={`text-xs md:text-sm font-bold ${idx < 2 ? "text-gray-400" : "text-blue-900 opacity-60"}`}
+      <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
+        {/* 2. Left Panel: Calendar */}
+        <div className="flex-1">
+          {/* Calendar Header */}
+          <div className="flex justify-between items-center mb-8 px-2">
+            <h3
+              className="text-[#2d5a9e] text-xl font-bold"
+              style={{
+                fontFamily:
+                  '"Liberation Serif", Tinos, "Times New Roman", serif',
+              }}
+            >
+              {monthName} {viewYear}
+            </h3>
+            <div className="flex space-x-4">
+              <button
+                onClick={handlePrevMonth}
+                className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={handleNextMonth}
+                className="text-[#4b8df2] hover:bg-blue-100 p-1 rounded-md transition duration-200"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Days Label Header */}
+          <div className="grid grid-cols-7 mb-4">
+            {dayLabels.map((l, i) => (
+              <div
+                key={i}
+                className="text-center text-[#9db7e0] font-bold text-sm"
+              >
+                {l}
+              </div>
+            ))}
+          </div>
+
+          {/* Date Grid */}
+          <div className="grid grid-cols-7 gap-y-2">
+            {calendarData.map(({ date, isCurrentMonth }) => {
+              const isSelectedVal = isSameDate(date, selectedDate)
+              const isTodayVal = isToday(date)
+
+              // Check if this specific date has a consultation
+              const hasConsult = hasConsultation(date)
+
+              return (
+                <button
+                  key={date.toISOString()}
+                  onClick={() => setSelectedDate(date)}
+                  className={`relative h-14 md:h-16 flex items-center justify-center transition-all duration-200 rounded-2xl
+    ${isCurrentMonth ? "text-[#2d5a9e]" : "text-[#c0d4ed]"}
+    ${isSelectedVal ? "z-10" : "hover:scale-105"}
+    ${hasConsult && !isSelectedVal ? "shadow-sm" : ""}
+  `}
+                  style={{
+                    backgroundColor:
+                      hasConsult && !isSelectedVal ? "#FFC4DB" : undefined,
+                  }}
+                >
+                  {/* Selected Highlight (Blue Square with dot) */}
+                  {isSelectedVal && (
+                    <div className="absolute inset-0 bg-[#4b8df2] rounded-2xl shadow-lg ring-4 ring-white/10 flex flex-col items-center justify-center">
+                      <span className="text-white text-lg font-bold">
+                        {date.getDate()}
+                      </span>
+                      <div className="w-1.5 h-1.5 bg-white rounded-full mt-1"></div>
+                    </div>
+                  )}
+
+                  {/* Normal & Highlighted States */}
+                  {!isSelectedVal && (
+                    <div className="flex flex-col items-center justify-center">
+                      <span
+                        className={`text-lg font-semibold
+                          ${isTodayVal && !hasConsult ? "text-[#4b8df2]" : ""}
+                          ${hasConsult ? "text-[#844250]" : ""}
+                        `}
+                      >
+                        {date.getDate()}
+                      </span>
+
+                      {/* A tiny dot underneath for extra emphasis */}
+                      {hasConsult && (
+                        <div className="w-1.5 h-1.5 bg-[#844250] rounded-full mt-0.5 opacity-60"></div>
+                      )}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 3. Right Panel: Today's Notes */}
+        <div className="w-full lg:w-[420px]">
+          <h3
+            className="text-[#2d5a9e] text-3xl font-bold mb-4"
+            style={{
+              fontFamily: '"Liberation Serif", Tinos, "Times New Roman", serif',
+            }}
           >
-            {label}
+            Today's Notes
+          </h3>
+          <div className="w-full h-px bg-blue-100 mb-8" />
+
+          <div className="space-y-8">
+            <EventCard
+              time="10:00 AM"
+              title="Morning Meditation"
+              description="Breathe in, breathe out..."
+              type="tape"
+            />
+            <EventCard
+              time="12:30 PM"
+              title="Creative Doodle Session"
+              description="Maybe draw a tiny whale?"
+              type="tape"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Bottom Section: Sticky Note */}
+      <div className="mt-16 space-y-8">
+        {notes.map((note, index) => (
+          <div key={index} className="relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-8 bg-[#d0e6ff] opacity-80 z-20 shadow-sm rounded-sm" />
+
+            <div className="w-full border-2 border-dashed border-[#c0d4ed] rounded-[32px] p-8 md:p-10 relative bg-white/40 group">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-[#9db7e0] font-bold text-xl">Sticky Note:</p>
+                <button
+                  onClick={() => {
+                    const newNotes = [...notes]
+                    newNotes.splice(index, 1)
+                    setNotes(newNotes)
+                  }}
+                  className="text-[#9db7e0] hover:text-[#4b8df2] hover:bg-white/50 p-2 rounded-full transition-colors duration-200"
+                  aria-label="Delete Note"
+                  title="Delete Note"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <textarea
+                ref={(el) => {
+                  if (el) {
+                    el.style.height = "auto"
+                    el.style.height = `${el.scrollHeight}px`
+                  }
+                }}
+                className="w-full bg-transparent border-none focus:ring-0 text-[#2d5a9e] text-xl font-medium resize-none overflow-y-auto min-h-24 max-h-[200px] placeholder:text-[#c0d4ed]"
+                value={note}
+                onChange={(e) => {
+                  const target = e.target
+                  target.style.height = "auto"
+                  target.style.height = `${target.scrollHeight}px`
+                  const newNotes = [...notes]
+                  newNotes[index] = target.value
+                  setNotes(newNotes)
+                }}
+                placeholder="Type your note here..."
+                autoFocus={index === notes.length - 1 && index !== 0}
+              />
+            </div>
           </div>
         ))}
-      </div>
 
-      {/* Dates Row */}
-      <div className="grid grid-cols-7 text-center mb-8 gap-1 md:gap-2">
-        {weekDates.map((date, idx) => {
-          const selected = isSelected(date);
-          const todayStatus = isToday(date);
-
-          return (
-            <button
-              key={date.toISOString()}
-              onClick={() => setSelectedDate(date)}
-              className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200
-                  ${
-                    selected
-                      ? "bg-blue-600 text-white shadow-md transform scale-105"
-                      : "bg-blue-50/30 text-gray-900 hover:bg-blue-50"
-                  }
-                  ${todayStatus && !selected ? "ring-2 ring-blue-200 font-bold" : ""}
-                `}
+        {/* Floating Add Button */}
+        <div className="absolute bottom-8 right-8 z-50">
+          <button
+            onClick={() => setNotes([...notes, ""])}
+            className="w-20 h-20 bg-[#4b8df2] text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
+            aria-label="Add Another Sticky Note"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12 transition-transform duration-300 group-hover:rotate-90"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <span
-                className={`text-sm md:text-lg font-bold ${!selected && idx < 2 ? "text-gray-300" : ""}`}
-              >
-                {date.getDate()}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Event Section */}
-      <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2">
-        {isLoading ? (
-          <div className="text-center text-gray-400 text-sm py-4">
-            Loading schedule...
-          </div>
-        ) : eventsForSelectedDate.length === 0 ? (
-          <div className="bg-gray-50 rounded-2xl p-4 md:p-6 border border-gray-100 text-center text-gray-400 text-sm">
-            No consultations scheduled for this day.
-          </div>
-        ) : (
-          eventsForSelectedDate.map((event) => {
-            // Format time (e.g., "02:30 PM")
-            const eventTime = new Date(event.requested_date).toLocaleTimeString(
-              [],
-              {
-                hour: "2-digit",
-                minute: "2-digit",
-              },
-            );
-            const modeText =
-              event.mode_of_consultation === "ON" ? "Online" : "Face-to-Face";
-
-            // Map status to color bar
-            let statusColor = "bg-yellow-500"; // Pending
-            if (event.status === "SC") statusColor = "bg-blue-500"; // Scheduled
-            if (event.status === "CO") statusColor = "bg-green-500"; // Completed
-            if (event.status === "CA") statusColor = "bg-red-500"; // Cancelled
-
-            return (
-              <div
-                key={event.id}
-                className="bg-blue-50/30 rounded-2xl p-4 md:p-6 border border-blue-50/50"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    {/* Dynamic status color bar */}
-                    <div
-                      className={`w-1.5 h-12 ${statusColor} rounded-full`}
-                    ></div>
-
-                    <div>
-                      <h3 className="text-gray-900 font-bold text-sm md:text-base capitalize">
-                        {event.reason || "Consultation Request"}
-                      </h3>
-                      <p className="text-gray-400 text-xs md:text-sm mt-0.5">
-                        {eventTime} - {modeText}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button className="text-gray-300 hover:text-blue-600 transition-colors">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={3}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default ScheduleWidget;
+// --- Helper Components ---
+
+const EventCard: React.FC<{
+  time: string
+  title: string
+  description: string
+  type: "pin" | "tape"
+}> = ({ time, title, description, type }) => {
+  return (
+    <div
+      className={`relative bg-white rounded-3xl p-6 shadow-sm border border-blue-50/50 hover:shadow-md transition-all duration-300 transform ${type === "pin" ? "-rotate-1" : "rotate-1"}`}
+    >
+      {type === "tape" && (
+        <div className="absolute -top-4 -right-2 w-16 h-8 bg-[#d0e6ff] opacity-70 rotate-20 shadow-sm rounded-sm" />
+      )}
+
+      <p className="text-[#4b8df2] text-xs font-bold uppercase tracking-wider mb-2">
+        {time}
+      </p>
+      <h4 className="text-[#2d5a9e] text-lg font-extrabold mb-1">{title}</h4>
+      <p className="text-[#9db7e0] text-sm font-medium leading-snug">
+        {description}
+      </p>
+    </div>
+  )
+}
+
+export default ScheduleDesktopWidget

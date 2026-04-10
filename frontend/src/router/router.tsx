@@ -33,7 +33,6 @@ export const router = createBrowserRouter([
   { path: "/register", element: <RegisterWrapper /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/disclaimers", element: <DisclaimersPage /> },
-  { path: "/logout", element: <LogoutPage />},
 
   // ====================
   // STUDENT
