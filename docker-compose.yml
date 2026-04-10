@@ -44,6 +44,8 @@ services:
     depends_on:
       - db
       - redis
+    volumes:
+      - ./backend/media:/app/media
 
   celery:
     build: ./backend
