@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isAxiosError } from "axios";
 import { useAuth } from "../../hooks/useAuth";
 import type { ApiError } from "../../types/auth";
 import GimiIcon from "../../assets/GIMI_Icon.svg";
@@ -54,8 +53,8 @@ export default function RegisterPage({ onBackToLogin }: RegisterPageProps) {
         password_confirm: confirmPassword,
       });
       navigate("/disclaimers");
-    } catch (err) {
-      if (isAxiosError(err) && err.response?.data) {
+    } catch (err: any) {
+      if (err?.response?.data) {
         setErrors(err.response.data as ApiError);
       } else {
         setErrors({ detail: "Registration failed. Please try again." });
