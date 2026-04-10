@@ -65,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Listen for token expiry from the axios interceptor
   useEffect(() => {
     const handler = () => {
+      localStorage.removeItem("access_token");
       setAccessToken(null);
       setState({ user: null, accessToken: null, status: "unauthenticated" });
     };
@@ -120,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await authService.logout();
     } finally {
       // Always clear local state, even if the backend call fails
+      localStorage.removeItem("access_token");
       setAccessToken(null);
       setState({ user: null, accessToken: null, status: "unauthenticated" });
     }
